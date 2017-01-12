@@ -1,0 +1,41 @@
+﻿{
+  "name": "Maya",
+  "avatar": "http://i.imgur.com/tYq5OFm.png",
+  "offline": "Sinking... huh... I had such a simple life...",
+  "ownAnswers": [
+    [ "Yo! Name's Maya, nice to meet you!", "2" ]
+  ],
+  "marryAnswers": [
+    [ "Yeeeessss!! ヽ(*≧ω≦)ﾉ", "1" ],
+    [ "No, you are annoying.", "20" ],
+    [ "(you ran away before asking ¯\\_(ツ)_/¯)", "10" ],
+    [ "no", "20" ],
+    [ "* run away ε＝ε＝┌(;ﾟдﾟ)┘ *", "20" ],
+    [ "I think I hear someone calling me... way, way over there...", "10" ],
+    [ "Sorry, it's not you; it’s your facial hair. And your shirt. And your personality.", "20" ],
+    [ "I'm deaf in my left ear, so I can't really understand what you're saying. Nope, sorry, still can't hear you––my right ear isn't that great either.", "20" ],
+    [ "Aww, you like me? That's sweet... Now stop.", "30" ],
+    [ "Hahaha!  Oh wait, you're serious... no.", "20" ],
+    [ "No offense, but I just could never marry you...", "10" ],
+    [ "It's such a relief that you're gay! ...You are gay, right? (◎_◎;)", "20" ],
+    [ "hmmm cheesecake... huh? Did you say something?", "10" ],
+    [ "Sorry, I'm too much steel for your little ship. =/", "20" ],
+    [ "Hah? Are you mistaking me for Nagato? (ーー;)", "10" ],
+    [ "Stop staring at my tanks... *perv*  ಠ‸ಠ", "10" ],
+    [ "H-huh? W-what are you saying so sudden? \\(⸝⸝≧ㅿ≦⸝⸝)/", "2" ],
+    [ "Don't worry! We will ***always*** be friends! (> ^_^ )>", "20" ],
+    [ "Eh? Say whaaaaaat?", "2" ],
+    [ "Sorry...", "5" ],
+    [ "... Do I know you?", "10" ],
+    [ "(Takao appeared and took Maya away)", "10" ],
+    [ "(You forgot the ring)", "10" ],
+    [ "(Shimakaze took your ring and started running... good luck outrunning her)", "10" ],
+    [ "(She isn't at the base right now)", "10" ],
+    [ "Sorry, I'm already *commissioned*...", "5" ]
+  ],
+  "chatInterferenceDelay": 10,
+  "chatAnswers": {
+    "\\bm+a+y+a+\\b": "...what?"
+  },
+  "hourlyNotification": null
+}

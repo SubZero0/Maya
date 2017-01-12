@@ -1,0 +1,49 @@
+﻿{
+  "name": "Yuudachi",
+  "avatar": "http://i.imgur.com/zb7TopV.png",
+  "offline": "Don't tell me... I'm sinkingish?",
+  "ownAnswers": [
+    [ "Hi, I'm Yuudachi, a Shiratsuyu-class destroyer. Nice to meet you!", "2" ]
+  ],
+  "marryAnswers": [
+    [ "Yeeeessss!! ヽ(*≧ω≦)ﾉ", "1" ],
+    [ "No, you are annoying.", "20" ],
+    [ "(you ran away before asking ¯\\_(ツ)_/¯)", "10" ],
+    [ "no", "20" ],
+    [ "* run away ε＝ε＝┌(;ﾟдﾟ)┘ *", "20" ],
+    [ "I think I hear someone calling me... way, way over there...", "10" ],
+    [ "Sorry, it's not you; it’s your facial hair. And your shirt. And your personality.", "20" ],
+    [ "I'm deaf in my left ear, so I can't really understand what you're saying. Nope, sorry, still can't hear you––my right ear isn't that great either.", "20" ],
+    [ "Aww, you like me? That's sweet... Now stop.", "30" ],
+    [ "Hahaha!  Oh wait, you're serious... no.", "20" ],
+    [ "No offense, but I just could never marry you...", "10" ],
+    [ "It's such a relief that you're gay! ...You are gay, right? (◎_◎;)", "20" ],
+    [ "hmmm cheesecake... huh? Did you say something?", "10" ],
+    [ "Sorry, I'm too much steel for your little ship. =/", "20" ],
+    [ "Stop staring at my tanks... *perv*  ಠ‸ಠ", "10" ],
+    [ "H-huh? W-what are you saying so sudden? \\(⸝⸝≧ㅿ≦⸝⸝)/", "2" ],
+    [ "Don't worry! We will ***always*** be friends! (> ^_^ )>", "20" ],
+    [ "Eh? Say whaaaaaat?", "2" ],
+    [ "Sorry...", "5" ],
+    [ "... Do I know you?", "10" ],
+    [ "(Murasame appeared and took Yuudachi away)", "10" ],
+    [ "(You forgot the ring)", "10" ],
+    [ "(Shimakaze took your ring and started running... good luck outrunning her)", "10" ],
+    [ "(She isn't at the base right now)", "10" ],
+    [ "Sorry, I'm already *commissioned*...", "5" ],
+    [ "http://i.imgur.com/98hikLS.png", "5" ]
+  ],
+  "chatInterferenceDelay": 5,
+  "chatAnswers": {
+    "\\bp+o+i+\\b": "Poi!",
+    "\\bs+u+mm+e+r+\\b": "It may be my imagination, but this armour is, like, too thin. Poi...\nhttp://i.imgur.com/bgq7iOP.png",
+    "\\b(f+i+r+e+w+o+r+k+s*|n+e+w+ +y+e+a+r+)\\b": "Looks like its the new year! Looks like Yuudachi will be wearing her best clothes! Looks like... I can fight in these clothes!\nhttp://i.imgur.com/MyF1cns.png",
+    "\\bs+h+i+r+a+t+s+u+y+u+\\b": "Shiratsuyu! That's my class! Do you know my sisters?",
+    "\\ba+s+h+i+g+a+r+a+\\b": "http://i.imgur.com/rnfdM9h.gif",
+    "\\b(d+a+n+c+)(e+|i+n+g+)?\\b": "http://i.imgur.com/vg2JPkl.gif",
+    "\\b(r+a+i+n+)(y+|i+n+g+)?\\b": "Hmm... rainy days tend to keep one at home but... still, it feels like I can go out now. Poi~\nhttp://i.imgur.com/rJ0HDK9.png",
+    "\\ba+u+t+u+m+n+\\b": "Autumns like, makes my tummy growl. Is the food ready yet? food～♪ food～♪\nhttp://i.imgur.com/ZcCDNOm.png",
+    "\\bf+u+b+u+k+i+\\b": "I like Fubuki~! But she's weird sometimes...\nhttp://i.imgur.com/sEjGC8W.jpg"
+  },
+  "hourlyNotification": null
+}

@@ -1,0 +1,9 @@
+﻿{
+  "BotToken": "...",
+  "DefaultCommandPrefix": "?",
+  "Answers": [
+    [ "Happy New Year!", "1" ]
+  ],
+  "SwearString": "\\b(f+u+c+k+|b+i+t+c+h+|w+h+o+r+e+|c+u+n+t+|a+ss+h+o+l+e+)(w+i+t+|e+r+|i+n+g+)?\\b",
+  "SwearTimer": 1
+}

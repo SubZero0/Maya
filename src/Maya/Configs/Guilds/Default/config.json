@@ -1,0 +1,25 @@
+﻿{
+  "CommandPrefix": "?",
+  "AllowedChannels": [],
+  "Notifications": {
+    "Enabled": true,
+    "TextChannel": "general"
+  },
+  "ForumUpdates": {
+    "Enabled": true,
+    "TextChannel": "announcements"
+  },
+  "Music": {
+    "Enabled": true,
+    "TextChannels": [ "music" ],
+    "VoiceChannel": "music"
+  },
+  "ChatterBot": {
+    "Enabled": true,
+    "TextChannels": [ "general" ]
+  },
+  "SwearJar": {
+    "Enabled": true,
+    "TextChannels": []
+  }
+}
