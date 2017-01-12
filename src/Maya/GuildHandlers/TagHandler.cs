@@ -26,8 +26,8 @@ namespace Maya.GuildHandlers
     public class TagHandler
     {
         private GuildHandler GuildHandler;
-        private static Dictionary<string, Tag> tags = null;
-        private static Timer timer;
+        private Dictionary<string, Tag> tags = null;
+        private Timer timer;
         public TagHandler(GuildHandler GuildHandler)
         {
             this.GuildHandler = GuildHandler;

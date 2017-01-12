@@ -15,7 +15,7 @@ namespace Maya
     {
         private MainHandler MainHandler;
         private Nullable<DateTime> interferenceTime;
-        private static Regex swear;
+        private Regex swear;
         private Nullable<DateTime> swearTimer;
         private ITextChannel focus;
         public TextHandler(MainHandler MainHandler)

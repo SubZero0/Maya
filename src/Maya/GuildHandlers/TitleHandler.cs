@@ -12,8 +12,8 @@ namespace Maya.GuildHandlers
     public class TitleHandler
     {
         private GuildHandler GuildHandler;
-        private static Dictionary<ulong, List<string>> titles = null;
-        private static Timer timer;
+        private Dictionary<ulong, List<string>> titles = null;
+        private Timer timer;
         public TitleHandler(GuildHandler GuildHandler)
         {
             this.GuildHandler = GuildHandler;

@@ -34,11 +34,11 @@ namespace Maya.GuildHandlers
 
         public async Task Initialize()
         {
-            await Check();
+            Check();
             await initialize();
         }
 
-        public async Task Check()
+        public void Check()
         {
             if (!Directory.Exists($"Configs{Path.DirectorySeparatorChar}Guilds{Path.DirectorySeparatorChar}{Guild.Id}"))
             {
@@ -46,18 +46,17 @@ namespace Maya.GuildHandlers
                 foreach (string newPath in Directory.GetFiles($"Configs{Path.DirectorySeparatorChar}Guilds{Path.DirectorySeparatorChar}Default", "*.*", SearchOption.TopDirectoryOnly))
                     File.Copy(newPath, newPath.Replace($"Configs{Path.DirectorySeparatorChar}Guilds{Path.DirectorySeparatorChar}Default", $"Configs{Path.DirectorySeparatorChar}Guilds{Path.DirectorySeparatorChar}{Guild.Id}"));
             }
-            await Task.CompletedTask;
         }
 
         private async Task initialize()
         {
             await ConfigHandler.Initialize();
             await DatabaseHandler.Initialize();
-            await TagHandler.Initialize();
             IgnoreHandler.Initialize();
             MusicHandler.Initialize();
-            await TitleHandler.Initialize();
             await PersonalityHandler.Initialize();
+            await TitleHandler.Initialize();
+            await TagHandler.Initialize();
         }
     }
 }
