@@ -38,7 +38,7 @@ namespace Maya.Modules.Commands
             using (var httpClient = new HttpClient())
             {
                 var link = $"https://api.cognitive.microsoft.com/bing/v5.0/images/search?q={search}&count=10&offset=0&mkt=en-us&safeSearch=Moderate";
-                httpClient.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", "...");
+                httpClient.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", MiscHandler.Load().BingAPIKey);
                 var res = await httpClient.GetAsync(link);
                 if (!res.IsSuccessStatusCode)
                 {
