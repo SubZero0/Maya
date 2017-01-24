@@ -1,0 +1,69 @@
+using System;
+using System.Threading.Tasks;
+using Discord;
+using Discord.Commands;
+using Maya.Attributes;
+using System.Text.RegularExpressions;
+using System.Collections.Generic;
+using Maya.ModulesAddons;
+
+namespace Maya.Modules
+{
+    [Group("title")]
+    [Summary("Main command for adding, deleting, and viewing titles")]
+    [RequireContext(ContextType.Guild)]
+    public class TitleModule : ModuleBase<MayaCommandContext>
+    {
+        [Command]
+        [Summary("Show titles")]
+        public async Task Title(IGuildUser user = null)
+        {
+            if (user == null)
+                user = Context.User as IGuildUser;
+            List<string> titles = Context.MainHandler.GuildTitleHandler(Context.Guild).GetTitles(user);
+            if (titles.Count == 0)
+            {
+                await ReplyAsync($"**{user.Nickname ?? user.Username}** doesn't have any titles.");
+                return;
+            }
+            EmbedBuilder eb = new EmbedBuilder();
+            eb.Title = $"{user.Nickname ?? user.Username}'s Titles";
+            eb.Color = Utils.getRandomColor();
+            eb.Description = $"『{String.Join("』 『", titles)}』";
+            await ReplyAsync("", false, eb);
+        }
+
+        [Command("add")]
+        [Summary("Add a new title")]
+        [RequireAdmin]
+        public async Task Add([Required] IGuildUser user = null, [Required, Remainder] string title = null)
+        {
+            if (Context.MainHandler.GuildTitleHandler(Context.Guild).ContainsTitle(user, title))
+            {
+                await ReplyAsync($"{user.Nickname ?? user.Username} already has 『{title}』.");
+                return;
+            }
+            if (title.Length > 150)
+            {
+                await ReplyAsync("Title exceeds length limit (> 150).");
+                return;
+            }
+            Context.MainHandler.GuildTitleHandler(Context.Guild).AddTitle(user, title);
+            await ReplyAsync($"❕ **{user.Nickname ?? user.Username}** got a new title! 『{title}』!");
+        }
+
+        [Command("delete")]
+        [Summary("Delete an existing title")]
+        [RequireAdmin]
+        public async Task Delete([Required] IGuildUser user = null, [Required, Remainder] string title = null)
+        {
+            if (!Context.MainHandler.GuildTitleHandler(Context.Guild).ContainsTitle(user, title))
+            {
+                await ReplyAsync("Title not found.");
+                return;
+            }
+            Context.MainHandler.GuildTitleHandler(Context.Guild).RemoveTitle(user, title);
+            await ReplyAsync($"❕ **{user.Nickname ?? user.Username}** lost the title 『{title}』!");
+        }
+    }
+}
