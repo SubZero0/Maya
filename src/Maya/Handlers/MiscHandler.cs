@@ -6,6 +6,7 @@ namespace Maya.Handlers
 {
     public class MiscHandler
     {
+        public string AppName = "";
         public string GoogleAPIkey = "";
         public string BingAPIKey = "";
         public string MashAPIkey = "";
