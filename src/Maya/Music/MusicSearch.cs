@@ -30,8 +30,8 @@ namespace Maya.Music
         {
             YouTubeService youtube = new YouTubeService(new BaseClientService.Initializer()
             {
-                ApplicationName = "...",
-                ApiKey = "..."
+                ApplicationName = MiscHandler.Load().AppName,
+                ApiKey = MiscHandler.Load().GoogleAPIkey
             });
             SearchResource.ListRequest listRequest = youtube.Search.List("snippet");
             listRequest.Q = search;
