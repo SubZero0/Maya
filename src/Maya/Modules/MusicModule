@@ -1,0 +1,126 @@
+using System;
+using System.Threading.Tasks;
+using Discord;
+using Discord.Commands;
+using Maya.Attributes;
+using Maya.Music;
+using Maya.ModulesAddons;
+
+namespace Maya.Modules
+{
+    [Name("Music")]
+    [MusicContext]
+    public class MusicModule : ModuleBase<MayaCommandContext>
+    {
+        [Command("play", RunMode = RunMode.Async)]
+        [Summary("Request to add a song to the music queue")]
+        public async Task Play([Required("search terms/video url/video id"), Remainder] string search = null)
+        {
+            MusicContext context = new MusicContext(Context);
+            MusicResult mr = Context.MainHandler.GuildMusicHandler(Context.Guild).CanUserAddToQueue(context, false);
+            if (!mr.IsSuccessful)
+            {
+                await ReplyAsync(mr.Error);
+                return;
+            }
+            await Context.MainHandler.GuildMusicHandler(Context.Guild).SearchAsync(context, search);
+        }
+
+        [Command("nowplaying")]
+        [Alias("np")]
+        [Summary("Show the information about the current song")]
+        public async Task Nowplaying()
+        {
+            MusicContext current = Context.MainHandler.GuildMusicHandler(Context.Guild).GetCurrentSong();
+            if (current == null)
+                await ReplyAsync("No song playing right now.");
+            else
+            {
+                EmbedBuilder eb = new EmbedBuilder();
+                eb.Title = "**Now playing**";
+                eb.Color = Utils.getRandomColor();
+                eb.ThumbnailUrl = $"http://img.youtube.com/vi/{current.Song.VideoId}/mqdefault.jpg";
+                eb.Description = $"[**{current.Song.Title}**](https://www.youtube.com/watch?v={current.Song.VideoId})";
+                eb.Description += $"\n**Duration**: ``[{current.Song.GetTimePlaying()}/{current.Song.Duration.GetValueOrDefault().ToString(@"mm\:ss")}]``";
+                if (current.AskedBy != null)
+                    eb.Description += $"- **Requested by**: {current.AskedBy.Nickname ?? current.AskedBy.Username}";
+                await ReplyAsync("", false, eb);
+            }
+        }
+
+        [Command("queue")]
+        [Summary("Show the information about the current song and the song queue")]
+        public async Task Queue()
+        {
+            EmbedBuilder eb = new EmbedBuilder();
+            eb.Color = Utils.getRandomColor();
+            MusicContext current = Context.MainHandler.GuildMusicHandler(Context.Guild).GetCurrentSong();
+            if (current != null)
+            {
+                eb.Title = "**Now playing**";
+                eb.ThumbnailUrl = $"http://img.youtube.com/vi/{current.Song.VideoId}/mqdefault.jpg";
+                eb.Description = $"[**{current.Song.Title}**](https://www.youtube.com/watch?v={current.Song.VideoId})";
+                eb.Description += $"\n**Duration**: ``[{current.Song.GetTimePlaying()}/{current.Song.Duration.GetValueOrDefault().ToString(@"mm\:ss")}]``";
+                if (current.AskedBy != null)
+                    eb.Description += $"- **Requested by**: {current.AskedBy.Nickname ?? current.AskedBy.Username}";
+            }
+            int n = 1;
+            var queue = Context.MainHandler.GuildMusicHandler(Context.Guild).GetMusicQueue().GetQueue();
+            if (queue.Count != 0)
+                eb.AddField(efb =>
+                {
+                    efb.IsInline = true;
+                    efb.Name = "**Queue**";
+                    efb.Value = "";
+                    foreach (MusicContext m in queue)
+                    {
+                        efb.Value += $"{(n != 1 ? "\n" : "")}``{n}-`` {m.Song.Title} ``[{m.Song.Duration.GetValueOrDefault().ToString(@"mm\:ss")}]``";
+                        if (m.AskedBy != null)
+                            efb.Value += $" - Requested by {m.AskedBy.Nickname ?? m.AskedBy.Username}";
+                        n++;
+                    }
+                });
+            if (current == null && n == 1)
+                await ReplyAsync("Nothing playing or in the queue. =(");
+            else
+                await ReplyAsync("", false, eb);
+        }
+
+        [Command("volume", RunMode = RunMode.Async)]
+        [Summary("Change the volume from the bot")]
+        [RequireAdmin]
+        public async Task Volume(Nullable<int> volume = null)
+        {
+            if (volume == null)
+            {
+                await ReplyAsync($"Current volume: {Context.MainHandler.GuildMusicHandler(Context.Guild).GetVolume()}%.\nChange it with: {Context.MainHandler.GetCommandPrefix(Context.Channel)}volume [0-100]");
+                return;
+            }
+            if (volume.Value < 0 || volume.Value > 100)
+            {
+                await ReplyAsync("The volume needs to be a number between 0 and 100.");
+                return;
+            }
+            Context.MainHandler.GuildMusicHandler(Context.Guild).ChangeVolume(volume.Value);
+            await ReplyAsync($"Changed volume to {volume.Value}%.");
+        }
+
+        [Command("skip", RunMode = RunMode.Async)]
+        [Summary("Skip the current song")]
+        [RequireAdmin]
+        public async Task Skip()
+        {
+            await ReplyAsync("Skipping...");
+            Context.MainHandler.GuildMusicHandler(Context.Guild).Skip();
+        }
+
+        [Command("stop", RunMode = RunMode.Async)]
+        [Summary("Skip the current song and erase the song queue")]
+        [RequireAdmin]
+        public async Task Stop()
+        {
+            await ReplyAsync("Stopping...");
+            Context.MainHandler.GuildMusicHandler(Context.Guild).Stop();
+        }
+    }
+}
