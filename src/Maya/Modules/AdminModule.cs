@@ -20,7 +20,7 @@ namespace Maya.Modules
 {
     [Name("Admin")]
     [RequireAdmin]
-    public class AdminCommands : ModuleBase<MayaCommandContext>
+    public class AdminModule : ModuleBase<MayaCommandContext>
     {
         [Command("eval", RunMode = RunMode.Async)]
         [RequireAdmin(AdminLevel.OWNER)]
