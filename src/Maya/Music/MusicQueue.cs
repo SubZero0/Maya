@@ -15,27 +15,25 @@ namespace Maya.Music
             queue = new ConcurrentQueue<MusicContext>();
         }
 
-        public async Task Enqueue(MusicContext song)
+        public async Task EnqueueAsync(MusicContext song)
         {
             MusicDownloader downloader = null;
-            if (MusicHandler.shouldDownload())
+            if (MusicHandler.ShouldDownload())
                 downloader = new MusicDownloader(song);
             queue.Enqueue(song);
             if (downloader != null)
-                await downloader.Run();
+                await downloader.RunAsync();
         }
 
-        public ConcurrentQueue<MusicContext> getQueue()
+        public ConcurrentQueue<MusicContext> GetQueue()
         {
             return queue;
         }
 
-        public MusicContext getNextSong()
+        public MusicContext GetNextSong()
         {
-            if (queue.Count == 0)
-                return null;
-            MusicContext r;
-            while (!queue.TryDequeue(out r)) ;
+            MusicContext r = null;
+            while (queue.Count != 0 && !queue.TryDequeue(out r)) ;
             return r;
         }
 

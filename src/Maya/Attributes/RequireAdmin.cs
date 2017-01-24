@@ -22,7 +22,7 @@ namespace Maya.Attributes
             if (!(context is MayaCommandContext))
                 return PreconditionResult.FromError("null");
             MayaCommandContext con = context as MayaCommandContext;
-            if (await con.MainHandler.PermissionHandler.isAtLeast(context.User, _level))
+            if (await con.MainHandler.PermissionHandler.IsAtLeastAsync(context.User, _level))
                 return PreconditionResult.FromSuccess();
             return PreconditionResult.FromError($"You must have at least **{ToFriendlyString(_level)}** rights to use this command.");
         }

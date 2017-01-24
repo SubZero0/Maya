@@ -1,4 +1,5 @@
 ﻿using Discord;
+using Discord.WebSocket;
 using Maya.Controllers;
 using System;
 using System.Collections.Generic;
@@ -14,30 +15,58 @@ namespace Maya.GuildHandlers
         public IGuild Guild { get; private set; }
         public ConfigHandler ConfigHandler { get; private set; }
         public DatabaseHandler DatabaseHandler { get; private set; }
-        public TagHandler TagHandler { get; private set; }
         public IgnoreHandler IgnoreHandler { get; private set; }
         public MusicHandler MusicHandler { get; private set; }
-        public TitleHandler TitleHandler { get; private set; }
         public PersonalityHandler PersonalityHandler { get; private set; }
-        public GuildHandler(MainHandler MainHandler, IGuild Guild)
+        public TitleHandler TitleHandler { get; private set; }
+        public TagHandler TagHandler { get; private set; }
+        public GuildHandler(MainHandler MainHandler, SocketGuild Guild)
         {
             this.MainHandler = MainHandler;
             this.Guild = Guild;
             ConfigHandler = new ConfigHandler(this);
             DatabaseHandler = new DatabaseHandler(this);
-            TagHandler = new TagHandler(this);
             IgnoreHandler = new IgnoreHandler(this);
             MusicHandler = new MusicHandler(this);
-            TitleHandler = new TitleHandler(this);
             PersonalityHandler = new PersonalityHandler(this);
+            TitleHandler = new TitleHandler(this);
+            TagHandler = new TagHandler(this);
         }
 
-        public async Task Initialize()
+        public async Task InitializeAsync()
         {
             Check();
-            await initialize();
+            await PrivateInitializeAsync();
         }
 
+        private async Task PrivateInitializeAsync()
+        {
+            await ConfigHandler.InitializeAsync();
+            await DatabaseHandler.InitializeAsync();
+            await IgnoreHandler.InitializeAsync();
+            await PersonalityHandler.InitializeAsync();
+            await TitleHandler.InitializeAsync();
+            await TagHandler.InitializeAsync();
+            await MusicHandler.InitializeAsync();
+        }
+
+        public async Task Close()
+        {
+            await ConfigHandler.Close();
+            await DatabaseHandler.Close();
+            await IgnoreHandler.Close();
+            await MusicHandler.Close();
+            await PersonalityHandler.Close();
+            await TitleHandler.Close();
+            await TagHandler.Close();
+        }
+
+        public async Task RenewGuildObject(SocketGuild Guild)
+        {
+            this.Guild = Guild;
+            await Guild.DownloadUsersAsync();
+        }
+         
         public void Check()
         {
             if (!Directory.Exists($"Configs{Path.DirectorySeparatorChar}Guilds{Path.DirectorySeparatorChar}{Guild.Id}"))
@@ -48,15 +77,10 @@ namespace Maya.GuildHandlers
             }
         }
 
-        private async Task initialize()
+        public void DeleteGuildFolder()
         {
-            await ConfigHandler.Initialize();
-            await DatabaseHandler.Initialize();
-            IgnoreHandler.Initialize();
-            MusicHandler.Initialize();
-            await PersonalityHandler.Initialize();
-            await TitleHandler.Initialize();
-            await TagHandler.Initialize();
+            if (!Directory.Exists($"Configs{Path.DirectorySeparatorChar}Guilds{Path.DirectorySeparatorChar}{Guild.Id}"))
+                Directory.Delete($"Configs{Path.DirectorySeparatorChar}Guilds{Path.DirectorySeparatorChar}{Guild.Id}", true);
         }
     }
 }

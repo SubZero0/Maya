@@ -22,29 +22,29 @@ namespace Maya.WoWS
             //search = "";
         }
 
-        public string getName()
+        public string GetName()
         {
             return (String)ship["name"];
         }
 
-        public string getImageUrl()
+        public string GetImageUrl()
         {
             return (string)((JObject)ship["images"])["small"];
         }
 
-        public async Task updateData()
+        public async Task UpdateDataAsync()
         {
             await Task.Delay(0);
         }
 
-        public string getHeadStats()
+        public string GetHeadStats()
         {
-            return MainHandler.ShipHandler.shipNation((String)ship["nation"]) + " " + MainHandler.ShipHandler.shipType((String)ship["type"]) + " " + ship["name"] + " (Tier " + MainHandler.ShipHandler.shipTier((int)ship["tier"]) + ")";
+            return MainHandler.ShipHandler.ShipNation((String)ship["nation"]) + " " + MainHandler.ShipHandler.ShipType((String)ship["type"]) + " " + ship["name"] + " (Tier " + MainHandler.ShipHandler.ShipTier((int)ship["tier"]) + ")";
         }
 
-        public Task<string> getSimpleStats()
+        public Task<string> GetSimpleStatsAsync()
         {
-            return new Task<string>(() => "RIP CVs");
+            return Task.FromResult<string>("RIP CVs");
         }
     }
 }

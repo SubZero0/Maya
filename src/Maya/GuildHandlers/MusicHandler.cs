@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.WebSocket;
+using Maya.Interfaces;
 using Maya.Music;
 using System;
 using System.Collections.Generic;
@@ -8,13 +9,13 @@ using System.Threading.Tasks;
 
 namespace Maya.GuildHandlers
 {
-    public class MusicHandler
+    public class MusicHandler : IGuildHandler
     {
         private GuildHandler GuildHandler;
         private IVoiceChannel voiceChannel;
         private MusicQueue queue;
         private MusicPlayer player;
-        private readonly int MaxQueue = 10;
+        private readonly int maxQueue = 10;
         public MusicHandler(GuildHandler GuildHandler)
         {
             this.GuildHandler = GuildHandler;
@@ -23,11 +24,23 @@ namespace Maya.GuildHandlers
             player = new MusicPlayer(GuildHandler, this);
         }
 
-        public void Initialize()
+        public Task InitializeAsync()
         {
+            return Task.CompletedTask;
         }
 
-        public bool isReady()
+        public async Task Close()
+        {
+            try
+            {
+                Stop();
+                if (player?.audioClient != null)
+                    await player.audioClient.DisconnectAsync();
+            }
+            catch { }
+        }
+
+        public bool IsReady()
         {
             if (queue == null)
                 return false;
@@ -36,23 +49,23 @@ namespace Maya.GuildHandlers
             return true;
         }
 
-        public MusicResult canUserUseMusicCommands(MusicContext context)
+        public MusicResult CanUserUseMusicCommands(MusicContext context)
         {
             if (!(context.AskedBy is IGuildUser))
                 return new MusicResult("null");
-            var wrapper = GuildHandler.ConfigHandler.getMusic();
-            if (!wrapper.isEnabled)
+            var wrapper = GuildHandler.ConfigHandler.GetMusic();
+            if (!wrapper.IsEnabled)
                 return new MusicResult("null");
-            if(!Utils.isChannelListed(context.Channel, wrapper.TextChannels))
+            if(!Utils.IsChannelListed(context.Channel, wrapper.TextChannels))
                 return new MusicResult("null");
             return new MusicResult();
         }
 
-        public MusicResult canUserAddToQueue(MusicContext context, bool checkCmds = true)
+        public MusicResult CanUserAddToQueue(MusicContext context, bool checkCmds = true)
         {
             if (checkCmds)
             {
-                MusicResult mr = canUserUseMusicCommands(context);
+                MusicResult mr = CanUserUseMusicCommands(context);
                 if (!mr.IsSuccessful)
                     return mr;
             }
@@ -61,17 +74,17 @@ namespace Maya.GuildHandlers
             return new MusicResult();
         }
 
-        public MusicQueue getMusicQueue()
+        public MusicQueue GetMusicQueue()
         {
             return queue;
         }
 
-        public MusicContext getCurrentSong()
+        public MusicContext GetCurrentSong()
         {
-            return player.getCurrentSong();
+            return player.GetCurrentSong();
         }
 
-        public IVoiceChannel getVoiceChannel()
+        public IVoiceChannel GetVoiceChannel()
         {
             return voiceChannel;
         }
@@ -87,21 +100,22 @@ namespace Maya.GuildHandlers
             Skip();
         }
 
-        public async Task JoinVoiceChannel(IVoiceChannel channel)
+        public async Task JoinVoiceChannelAsync(IVoiceChannel channel)
         {
+            if (channel == null)
+                return;
             if (player.audioClient != null)
                 await player.audioClient.DisconnectAsync();
             voiceChannel = channel;
             player.audioClient = await channel.ConnectAsync();
         }
 
-        public async Task Reset()
+        public async Task ResetAsync()
         {
-            //TODO: Clear voice buffer
+            //TODO: Clear voice buffer?
             Stop();
             await Task.Delay(1000);
-            if (player.audioClient != null)
-                await JoinVoiceChannel(voiceChannel);
+            await JoinVoiceChannelAsync(voiceChannel);
             await GuildHandler.MainHandler.Client.SetGameAsync(null);
             player = new MusicPlayer(GuildHandler, this);
         }
@@ -111,20 +125,25 @@ namespace Maya.GuildHandlers
             player.ChangeVolume(n / 100.0f);
         }
 
-        public async Task Search(MusicContext music, string search)
+        public int GetVolume() //[0,100]
         {
-            music = new MusicSearch(music, search).Run();
+            return (int)(player.GetVolume() * 100);
+        }
+
+        public async Task SearchAsync(MusicContext music, string search)
+        {
+            music = await new MusicSearch(music, search).RunAsync();
             if (music == null)
             {
                 await music.Channel.SendMessageAsync("No result found.");
                 return;
             }
-            if (isSongInPlaylist(music))
+            if (IsSongInPlaylist(music))
             {
                 await music.Channel.SendMessageAsync($"Couldn't queue your request of **{music.Song.Title ?? music.Song.VideoId}** because it's already in the playlist.");
                 return;
             }
-            music = await new MusicPreemptiveDownload(music).Run();
+            music = await new MusicPreemptiveDownload(music).RunAsync();
             if (music == null)
             {
                 await music.Channel.SendMessageAsync("Video not found.");
@@ -135,37 +154,37 @@ namespace Maya.GuildHandlers
                 await music.Channel.SendMessageAsync("Video length exceeds limit (more than 9 minutes).");
                 return;
             }
-            await Queue(music);
+            await QueueAsync(music);
         }
 
-        public async Task Queue(MusicContext music)
+        public async Task QueueAsync(MusicContext music)
         {
-            if (queue.getQueue().Count >= MaxQueue)
+            if (queue.GetQueue().Count >= maxQueue)
             {
-                await music.Channel.SendMessageAsync($"Couldn't queue your request of **{music.Song.Title}** because the limit was reached. (Max: {MaxQueue})");
+                await music.Channel.SendMessageAsync($"Couldn't queue your request of **{music.Song.Title}** because the limit was reached. (Max: {maxQueue})");
                 return;
             }
-            if (isSongInPlaylist(music))
+            if (IsSongInPlaylist(music))
             {
                 await music.Channel.SendMessageAsync($"Couldn't queue your request of **{music.Song.Title ?? music.Song.VideoId}** because it's already in the playlist.");
                 return;
             }
-            await queue.Enqueue(music);
-            await music.Channel.SendMessageAsync($"Enqueued **{music.Song.Title}** to the playlist.\nPosition: {queue.getQueue().Count} - estimated time until playing: {estimateTimeUntilLast(music)}");
-            await Play();
+            await queue.EnqueueAsync(music);
+            await music.Channel.SendMessageAsync($"Enqueued **{music.Song.Title}** to the playlist.\nPosition: {queue.GetQueue().Count} - estimated time until playing: {GetEstimatedTimeUntil(music)}");
+            await PlayAsync();
         }
 
-        public async Task Play()
+        public async Task PlayAsync()
         {
-            await player.Run();
+            await player.RunAsync();
         }
 
-        public string estimateTimeUntilLast(MusicContext until)
+        public string GetEstimatedTimeUntil(MusicContext until)
         {
             int secs = 0;
-            if (player.getCurrentSong() != null)
-                secs += player.getCurrentSong().Song.timeUntilEnd();
-            foreach (MusicContext m in queue.getQueue())
+            if (player.GetCurrentSong() != null)
+                secs += player.GetCurrentSong().Song.GetTimeUntilEnd();
+            foreach (MusicContext m in queue.GetQueue())
             {
                 if (m == until)
                     break;
@@ -175,23 +194,23 @@ namespace Maya.GuildHandlers
             return $"{ts.Hours}:{(ts.Minutes < 10 ? $"0{ts.Minutes}" : $"{ts.Minutes}")}:{(ts.Seconds < 10 ? $"0{ts.Seconds}" : $"{ts.Seconds}")}";
         }
 
-        public bool isSongInPlaylist(MusicContext context) => isSongInPlaylist(context.Song);
-        public bool isSongInPlaylist(Song song)
+        public bool IsSongInPlaylist(MusicContext context) => IsSongInPlaylist(context.Song);
+        public bool IsSongInPlaylist(Song song)
         {
-            if (player.getCurrentSong() != null)
-                if (player.getCurrentSong().Song.VideoId.Equals(song.VideoId))
+            if (player.GetCurrentSong() != null)
+                if (player.GetCurrentSong().Song.VideoId.Equals(song.VideoId))
                     return true;
-            if (queue.getQueue().Count(x => x.Song.VideoId.Equals(song.VideoId)) != 0)
+            if (queue.GetQueue().Count(x => x.Song.VideoId.Equals(song.VideoId)) != 0)
                 return true;
             return false;
         }
 
-        public bool shouldDownload()
+        public bool ShouldDownload()
         {
             return false; //TODO: Fix download
-            if (player.getCurrentSong() != null)
+            if (player.GetCurrentSong() != null)
                 return true;
-            if (queue.getQueue().Count == 0)
+            if (queue.GetQueue().Count == 0)
                 return false;
             return true;
         }

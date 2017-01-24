@@ -19,14 +19,14 @@ namespace Maya.Music
             this.search = search;
         }
 
-        public MusicContext Run()
+        public async Task<MusicContext> RunAsync()
         {
-            if (YoutubeSearch())
+            if (await YoutubeSearch())
                 return context;
             return null;
         }
 
-        private bool YoutubeSearch()
+        private async Task<bool> YoutubeSearch()
         {
             YouTubeService youtube = new YouTubeService(new BaseClientService.Initializer()
             {
@@ -37,7 +37,7 @@ namespace Maya.Music
             listRequest.Q = search;
             listRequest.MaxResults = 1;
             listRequest.Type = "video";
-            SearchListResponse resp = listRequest.Execute();
+            SearchListResponse resp = await listRequest.ExecuteAsync();
             if (resp.Items.Count() == 0)
                 return false;
             SearchResult result = resp.Items.ElementAt(0);

@@ -7,6 +7,6 @@ namespace Maya
 {
     public class Program
     {
-        public static void Main(string[] args) => new MayaBot().Run().GetAwaiter().GetResult();
+        public static void Main(string[] args) => new MayaBot().RunAsync().GetAwaiter().GetResult();
     }
 }

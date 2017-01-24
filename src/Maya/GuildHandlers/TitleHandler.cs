@@ -1,4 +1,5 @@
 ﻿using Discord;
+using Maya.Interfaces;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -9,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Maya.GuildHandlers
 {
-    public class TitleHandler
+    public class TitleHandler : IGuildHandler
     {
         private GuildHandler GuildHandler;
         private Dictionary<ulong, List<string>> titles = null;
@@ -19,18 +20,24 @@ namespace Maya.GuildHandlers
             this.GuildHandler = GuildHandler;
         }
 
-        public async Task Initialize()
+        public async Task InitializeAsync()
         {
-            await loadTitles();
-            timer = new Timer(Timer_Elapsed, null, Timeout.Infinite, Timeout.Infinite);
+            await LoadTitlesAsync();
+            timer = new Timer(TimerElapsed, null, Timeout.Infinite, Timeout.Infinite);
         }
 
-        private async void Timer_Elapsed(object state)
+        public async Task Close()
         {
-            await saveTitles();
+            await SaveTitlesAsync();
+            timer.Dispose();
         }
 
-        public async Task saveTitles()
+        private async void TimerElapsed(object state)
+        {
+            await SaveTitlesAsync();
+        }
+
+        public async Task SaveTitlesAsync()
         {
             await Task.Run(() =>
             {
@@ -39,7 +46,7 @@ namespace Maya.GuildHandlers
             });
         }
 
-        public async Task loadTitles()
+        public async Task LoadTitlesAsync()
         {
             await Task.Run(() =>
             {
@@ -49,7 +56,7 @@ namespace Maya.GuildHandlers
             });
         }
 
-        public void addTitle(IUser u, string title)
+        public void AddTitle(IUser u, string title)
         {
             if (!titles.ContainsKey(u.Id))
             {
@@ -62,9 +69,9 @@ namespace Maya.GuildHandlers
             timer.Change(300000, Timeout.Infinite);
         }
 
-        public void removeTitle(IUser u, string title)
+        public void RemoveTitle(IUser u, string title)
         {
-            if(containsTitle(u, title))
+            if(ContainsTitle(u, title))
             {
                 titles[u.Id].Remove(title);
                 if (titles[u.Id].Count == 0)
@@ -73,14 +80,14 @@ namespace Maya.GuildHandlers
             timer.Change(300000, Timeout.Infinite);
         }
 
-        public bool containsTitle(IUser u, string title)
+        public bool ContainsTitle(IUser u, string title)
         {
             if (!titles.ContainsKey(u.Id))
                 return false;
             return titles[u.Id].Contains(title);
         }
 
-        public List<string> getTitles(IUser u)
+        public List<string> GetTitles(IUser u)
         {
             if (!titles.ContainsKey(u.Id))
                 return new List<string>();

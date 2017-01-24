@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.WebSocket;
+using Maya.Interfaces;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -12,108 +13,117 @@ using System.Threading.Tasks;
 
 namespace Maya.GuildHandlers
 {
-    public class PersonalityHandler
+    public class PersonalityHandler : IGuildHandler
     {
         private GuildHandler GuildHandler;
         private JObject personality;
         private Timer timer;
         private Dictionary<Regex, string> answers;
+        private Nullable<int> lastHour;
+        private TimeZoneInfo timezone;
         public PersonalityHandler(GuildHandler GuildHandler)
         {
             this.GuildHandler = GuildHandler;
             personality = null;
-            timer = new Timer(Timer_Elapsed, null, Timeout.Infinite, Timeout.Infinite);
+            timer = new Timer(TimerElapsed, null, Timeout.Infinite, Timeout.Infinite);
             answers = new Dictionary<Regex, string>();
+            lastHour = null;
+            var tzs = TimeZoneInfo.GetSystemTimeZones().Where(x => x.Id.Contains("Japan") || x.Id.Contains("Tokyo"));
+            timezone = tzs.ElementAtOrDefault(0) ?? TimeZoneInfo.Utc;
         }
 
-        public bool hasPersonality(string name)
+        public async Task InitializeAsync()
+        {
+            await LoadPersonalityAsync(GuildHandler.DatabaseHandler.GetPersonality());
+        }
+
+        public Task Close()
+        {
+            timer.Dispose();
+            return Task.CompletedTask;
+        }
+
+        public bool ExistsPersonality(string name)
         {
             return File.Exists($"Configs{Path.DirectorySeparatorChar}Personalities{Path.DirectorySeparatorChar}{name.ToLower()}.json");
         }
 
-        public async Task Initialize()
+        private async void TimerElapsed(object state)
         {
-            await loadPersonality(GuildHandler.DatabaseHandler.getPersonality());
-        }
-
-        private async void Timer_Elapsed(object state)
-        {
-            try
+            DateTime dt = TimeZoneInfo.ConvertTime(DateTime.UtcNow, timezone);
+            if (dt.Minute == 0 && (lastHour == null || (lastHour != null && lastHour.GetValueOrDefault() != dt.Hour)))
             {
-                DateTime dt;
-                try { dt = TimeZoneInfo.ConvertTime(DateTime.Now, TimeZoneInfo.FindSystemTimeZoneById("Japan")); }
-                catch (Exception) { dt = DateTime.Now; }
-                if (dt.Minute == 0)
-                    (await Utils.findTextChannel(GuildHandler.Guild as SocketGuild, GuildHandler.ConfigHandler.getNotifications().TextChannel))?.SendMessageAsync((string)((JObject)personality["hourlyNotification"])[$"{dt.Hour}"]);
+                lastHour = dt.Hour;
+                var ch = await Utils.FindTextChannel(GuildHandler.Guild as SocketGuild, GuildHandler.ConfigHandler.GetNotifications().TextChannel);
+                if (ch != null)
+                    await Utils.SendMessageAsyncEx("PersonalityHourlyMessage", () => ch.SendMessageAsync((string)((JObject)personality["hourlyNotification"])[$"{lastHour = dt.Hour}"]));
             }
-            catch (Exception) { timer.Change(Timeout.Infinite, Timeout.Infinite); }
         }
 
-        public async Task loadPersonality(string name)
+        public async Task LoadPersonalityAsync(string name)
         {
-            if (!hasPersonality(name))
+            if (!ExistsPersonality(name))
                 return;
             timer.Change(Timeout.Infinite, Timeout.Infinite);
             personality = null;
             answers.Clear();
             name = name.ToLower();
             personality = JObject.Parse(File.ReadAllText($"Configs{Path.DirectorySeparatorChar}Personalities{Path.DirectorySeparatorChar}{name}.json"));
-            await Task.Delay(500);
-            if(GuildHandler.ConfigHandler.getNotifications().isEnabled)
+            if (GuildHandler.ConfigHandler.GetNotifications().IsEnabled)
                 if (personality["hourlyNotification"] != null)
-                    timer.Change(60000, 60000);
+                    timer.Change(6000, 60000);
             JObject ans = (JObject)personality["chatAnswers"];
             foreach (JProperty o in ans.Children())
             {
                 Regex n = new Regex(o.Name, RegexOptions.Compiled | RegexOptions.IgnoreCase);
                 answers[n] = (string)ans[o.Name];
             }
-            await (await GuildHandler.Guild.GetCurrentUserAsync()).ModifyAsync(x => x.Nickname = getName());
+            await (await GuildHandler.Guild.GetCurrentUserAsync()).ModifyAsync(x => x.Nickname = GetName());
         }
 
-        public string getName()
+        public string GetName()
         {
             if (personality == null)
                 return null;
             return (string)personality["name"];
         }
 
-        public string getAvatarUrl()
+        public string GetAvatarUrl()
         {
             if (personality == null)
                 return null;
             return (string)personality["avatar"];
         }
 
-        public string getOfflineString()
+        public string GetOfflineString()
         {
             if (personality == null)
                 return null;
             return (string)personality["offline"];
         }
 
-        public string[,] getOwnAnswers()
+        public string[,] GetOwnAnswers()
         {
             if (personality == null)
                 return new string[,] { };
             return ((JArray)personality["ownAnswers"]).ToObject<string[,]>();
         }
 
-        public string[,] getMarryAnswers()
+        public string[,] GetMarryAnswers()
         {
             if (personality == null)
                 return null;
             return ((JArray)personality["marryAnswers"]).ToObject<string[,]>();
         }
 
-        public int getChatInterferenceDelay()
+        public int GetChatInterferenceDelay()
         {
             if (personality == null)
                 return 10;
             return (int)personality["chatInterferenceDelay"];
         }
 
-        public string getAnswer(string text)
+        public string GetAnswer(string text)
         {
             if (personality == null)
                 return null;
@@ -123,7 +133,7 @@ namespace Maya.GuildHandlers
             return null;
         }
 
-        public bool isReady()
+        public bool IsReady()
         {
             return (personality != null);
         }

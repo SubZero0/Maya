@@ -8,10 +8,11 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using Discord;
 using Maya.Controllers;
+using Maya.Interfaces;
 
 namespace Maya
 {
-    public class TextHandler
+    public class TextHandler : IHandler
     {
         private MainHandler MainHandler;
         private Nullable<DateTime> interferenceTime;
@@ -26,57 +27,69 @@ namespace Maya
             focus = null;
         }
 
-        public void Initialize(string swear_string)
+        public async Task InitializeAsync(string swear_string)
         {
             swear = new Regex(swear_string, RegexOptions.Compiled | RegexOptions.IgnoreCase);
-            MainHandler.Client.MessageReceived += HandleText;
+            MainHandler.Client.MessageReceived += HandleTextAsync;
+            await Task.CompletedTask;
         }
 
-        public void resetInterferenceTime()
+        public Task Close()
+        {
+            MainHandler.Client.MessageReceived -= HandleTextAsync;
+            return Task.CompletedTask;
+        }
+
+        public void ResetInterferenceTime()
         {
             interferenceTime = null;
         }
 
-        public async Task HandleText(SocketMessage parameterMessage)
+        public async Task HandleTextAsync(SocketMessage parameterMessage)
         {
             var msg = parameterMessage as SocketUserMessage;
             if (msg == null) return;
-            if (msg.Channel is ITextChannel && !MainHandler.GuildConfigHandler((msg.Channel as ITextChannel).Guild).isChannelAllowed(msg.Channel)) return;
+            if (msg.Channel is ITextChannel && !MainHandler.GuildConfigHandler((msg.Channel as ITextChannel).Guild).IsChannelAllowed(msg.Channel)) return;
 
             if (msg.Channel is ITextChannel)
             {
                 var channel = msg.Channel as ITextChannel;
-                if (!MainHandler.GuildIgnoreHandler(channel.Guild).contains(msg.Author.Id) && !msg.Author.IsBot)
+                if (!MainHandler.GuildIgnoreHandler(channel.Guild).Contains(msg.Author.Id) && !msg.Author.IsBot)
                 {
-                    if (!(msg.Content.StartsWith(MainHandler.getCommandPrefix(msg.Channel)) && char.IsLetter(msg.Content.ElementAt(1))))
+                    var autoResponse = MainHandler.GuildConfigHandler(channel.Guild).GetAutoResponse();
+                    if (autoResponse.IsEnabled && Utils.IsChannelListed(channel, autoResponse.TextChannels))
                     {
-                        bool interfere = true;
-                        if (interferenceTime != null)
-                            if (((TimeSpan)(DateTime.Now - interferenceTime.GetValueOrDefault())).Minutes < MainHandler.GuildPersonalityHandler(channel.Guild).getChatInterferenceDelay())
-                                interfere = false;
-                        if (interfere)
+                        var prefix = MainHandler.GetCommandPrefix(msg.Channel);
+                        if (!(msg.Content.StartsWith(prefix) && msg.Content.Length > prefix.Length + 1 && char.IsLetter(msg.Content.ElementAt(prefix.Length + 1))))
                         {
-                            string ans = null;
-                            /*if (Answers.isReady()) //TODO: Get answers file!!
-                                ans = Answers.getAnswer(e.Message.RawText);*/
-                            if (MainHandler.GuildPersonalityHandler(channel.Guild).isReady())
+                            bool interfere = true;
+                            if (interferenceTime != null)
+                                if (((TimeSpan)(DateTime.Now - interferenceTime.GetValueOrDefault())).Minutes < MainHandler.GuildPersonalityHandler(channel.Guild).GetChatInterferenceDelay())
+                                    interfere = false;
+                            if (interfere)
                             {
-                                string temp = MainHandler.GuildPersonalityHandler(channel.Guild).getAnswer(msg.Content);
-                                if (temp != null)
-                                    ans = temp;
-                            }
-                            if (ans != null)
-                            {
-                                interferenceTime = DateTime.Now;
-                                await msg.Channel.SendMessageAsync(ans);
+                                string ans = null;
+                                /*if (Answers.isReady()) //TODO: Get answers file!!
+                                    ans = Answers.getAnswer(e.Message.RawText);*/
+                                if (MainHandler.GuildPersonalityHandler(channel.Guild).IsReady())
+                                {
+                                    string temp = MainHandler.GuildPersonalityHandler(channel.Guild).GetAnswer(msg.Content);
+                                    if (temp != null)
+                                        ans = temp;
+                                }
+                                if (ans != null)
+                                {
+                                    interferenceTime = DateTime.Now;
+                                    await msg.Channel.SendMessageAsync(ans);
+                                }
                             }
                         }
                     }
-                    if (MainHandler.GuildPersonalityHandler(channel.Guild).isReady())
-                        if (msg.Content.IndexOf($"{MainHandler.getCommandPrefix(channel)}{MainHandler.GuildPersonalityHandler(channel.Guild).getName()}", StringComparison.OrdinalIgnoreCase) != -1)
+                    if (MainHandler.GuildPersonalityHandler(channel.Guild).IsReady())
+                        if (msg.Content.IndexOf($"{MainHandler.GetCommandPrefix(channel)}{MainHandler.GuildPersonalityHandler(channel.Guild).GetName()}", StringComparison.OrdinalIgnoreCase) != -1)
                         {
-                            string[,] own = MainHandler.GuildPersonalityHandler(channel.Guild).getOwnAnswers();
-                            string[,] temp = MainHandler.ConfigHandler.getAnswers();
+                            string[,] own = MainHandler.GuildPersonalityHandler(channel.Guild).GetOwnAnswers();
+                            string[,] temp = MainHandler.ConfigHandler.GetAnswers();
                             string[,] sum = new string[own.GetLength(0) + temp.GetLength(0), 2];
                             for (int i = 0; i < own.GetLength(0); i++)
                             {
@@ -88,33 +101,33 @@ namespace Maya
                                 sum[own.GetLength(0) + i, 0] = temp[i, 0];
                                 sum[own.GetLength(0) + i, 1] = temp[i, 1];
                             }
-                            await msg.Channel.SendMessageAsync(Utils.getRandomWeightedChoice(sum));
+                            await msg.Channel.SendMessageAsync(Utils.GetRandomWeightedChoice(sum));
                             return;
                         }
                     if (swear != null)
                     {
-                        var sj = MainHandler.GuildConfigHandler(channel.Guild).getSwearJar();
-                        if (sj.isEnabled && Utils.isChannelListed(msg.Channel, sj.TextChannels))
+                        var sj = MainHandler.GuildConfigHandler(channel.Guild).GetSwearJar();
+                        if (sj.IsEnabled && Utils.IsChannelListed(msg.Channel, sj.TextChannels))
                         {
                             bool swearjar = true;
                             if (swearTimer != null)
-                                if (((TimeSpan)(DateTime.Now - swearTimer.GetValueOrDefault())).Minutes < MainHandler.ConfigHandler.getSwearTimer())
+                                if (((TimeSpan)(DateTime.Now - swearTimer.GetValueOrDefault())).Minutes < MainHandler.ConfigHandler.GetSwearTimer())
                                     swearjar = false;
                             if (swearjar)
                                 if (swear.Match(msg.Content).Success)
                                 {
                                     swearTimer = DateTime.Now;
-                                    MainHandler.GuildDatabaseHandler(channel.Guild).addSwearJar(0.25);
+                                    MainHandler.GuildDatabaseHandler(channel.Guild).AddSwearJar(0.25);
                                     await msg.Channel.SendMessageAsync("More $0.25 to the swear jar!");
                                 }
                         }
                     }
-                    var chatterbot = MainHandler.GuildConfigHandler(channel.Guild).getChatterBot();
-                    if (chatterbot.isEnabled && Utils.isChannelListed(msg.Channel, chatterbot.TextChannels))
+                    var chatterbot = MainHandler.GuildConfigHandler(channel.Guild).GetChatterBot();
+                    if (chatterbot.IsEnabled && Utils.IsChannelListed(msg.Channel, chatterbot.TextChannels))
                     {
                         int argPos = 0;
                         if (msg.HasMentionPrefix(MainHandler.Client.CurrentUser, ref argPos))
-                            await MainHandler.BotHandler.Talk(msg.Channel, msg.Content.Substring(argPos));
+                            await MainHandler.BotHandler.TalkAsync(msg.Channel, msg.Content.Substring(argPos));
                     }
                 }
             }
@@ -122,11 +135,11 @@ namespace Maya
             {
                 int argPos = 0;
                 if (msg.HasMentionPrefix(MainHandler.Client.CurrentUser, ref argPos))
-                    await MainHandler.BotHandler.Talk(msg.Channel, msg.Content.Substring(argPos));
+                    await MainHandler.BotHandler.TalkAsync(msg.Channel, msg.Content.Substring(argPos));
             }
 
             if (msg.Channel is ISocketPrivateChannel)
-                if (await MainHandler.PermissionHandler.isOwner(msg.Author))
+                if (await MainHandler.PermissionHandler.IsOwnerAsync(msg.Author))
                 {
                     if (msg.Content.StartsWith("focus"))
                     {
@@ -149,13 +162,13 @@ namespace Maya
                                 return;
                             }
                             string[] split = str.Split(new string[] { " | " }, StringSplitOptions.None);
-                            SocketGuild g = Utils.findGuild(MainHandler.Client, split[0]);
+                            SocketGuild g = Utils.FindGuild(MainHandler.Client, split[0]);
                             if (g == null)
                             {
                                 await msg.Channel.SendMessageAsync("Guild not found");
                                 return;
                             }
-                            ITextChannel t = await Utils.findTextChannel(g, split[1]);
+                            ITextChannel t = await Utils.FindTextChannel(g, split[1]);
                             if (t == null)
                             {
                                 await msg.Channel.SendMessageAsync("Text channel not found");

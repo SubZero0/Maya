@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Maya.Controllers;
+using Maya.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,7 +9,7 @@ using static Maya.Enums.Administration;
 
 namespace Maya.Handlers
 {
-    public class PermissionHandler
+    public class PermissionHandler : IHandler
     {
         private MainHandler MainHandler;
         public PermissionHandler(MainHandler MainHandler)
@@ -16,28 +17,33 @@ namespace Maya.Handlers
             this.MainHandler = MainHandler;
         }
 
-        public async Task<bool> isOwner(IUser user)
+        public Task Close()
+        {
+            return Task.CompletedTask;
+        }
+
+        public async Task<bool> IsOwnerAsync(IUser user)
         {
             return user.Id == (await MainHandler.Client.GetApplicationInfoAsync()).Owner.Id;
         }
 
-        public async Task<bool> isAdmin(IUser user)
+        public async Task<bool> IsAdminAsync(IUser user)
         {
             return await Task.FromResult(false);
         }
 
-        public async Task<bool> isMod(IUser user)
+        public async Task<bool> IsModAsync(IUser user)
         {
             return await Task.FromResult(false);
         }
 
-        public async Task<bool> isAtLeast(IUser user, AdminLevel level)
+        public async Task<bool> IsAtLeastAsync(IUser user, AdminLevel level)
         {
-            if (await isOwner(user) && AdminLevel.OWNER >= level)
+            if (await IsOwnerAsync(user) && AdminLevel.OWNER >= level)
                 return await Task.FromResult(true);
-            if (await isAdmin(user) && AdminLevel.ADMIN >= level)
+            if (await IsAdminAsync(user) && AdminLevel.ADMIN >= level)
                 return await Task.FromResult(true);
-            if (await isMod(user) && AdminLevel.MODERATOR >= level)
+            if (await IsModAsync(user) && AdminLevel.MODERATOR >= level)
                 return await Task.FromResult(true);
             if (AdminLevel.USER >= level)
                 return await Task.FromResult(true);

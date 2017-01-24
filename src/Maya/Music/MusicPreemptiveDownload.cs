@@ -16,7 +16,7 @@ namespace Maya.Music
             context = m;
         }
 
-        public async Task<MusicContext> Run()
+        public async Task<MusicContext> RunAsync()
         {
             switch(context.Song.Provider)
             {
@@ -28,7 +28,7 @@ namespace Maya.Music
             return null;
         }
 
-        public async Task<MusicContext> Youtube()
+        private async Task<MusicContext> Youtube()
         {
             try
             {

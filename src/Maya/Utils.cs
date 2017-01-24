@@ -2,6 +2,7 @@
 using Discord.WebSocket;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -9,7 +10,23 @@ namespace Maya
 {
     public class Utils
     {
-        public static bool isChannelListed(IChannel channel, List<string> list, bool allow_others = true)
+        public static async Task SendMessageAsyncEx(string name, Func<Task<IUserMessage>> message)
+        {
+            if (message != null)
+            {
+                try
+                {
+                    await message.Invoke();
+                }
+                catch (Exception e)
+                {
+                    File.AppendAllText("exceptions.txt", $"Exception at {name}\n{e.ToString()}\n\n\n");
+                    Console.WriteLine($">>EXCEPTION<< Exception at {name}!");
+                }
+            }
+        }
+
+        public static bool IsChannelListed(IChannel channel, List<string> list, bool allow_others = true)
         {
             if (!(channel is ITextChannel))
                 return (allow_others ? true : false);
@@ -18,7 +35,7 @@ namespace Maya
             return list.Contains(channel.Name);
         }
 
-        public async static Task<IVoiceChannel> findVoiceChannel(SocketGuild guild, string voice_channel)
+        public async static Task<IVoiceChannel> FindVoiceChannel(SocketGuild guild, string voice_channel)
         {
             var cs = await guild.GetVoiceChannelsAsync();
             IVoiceChannel r = cs.FirstOrDefault(x => x.Name == voice_channel);
@@ -30,7 +47,7 @@ namespace Maya
             return null;
         }
 
-        public async static Task<ITextChannel> findTextChannel(SocketGuild guild, string text_channel)
+        public async static Task<ITextChannel> FindTextChannel(SocketGuild guild, string text_channel)
         {
             var cs = await guild.GetTextChannelsAsync();
             ITextChannel r = cs.FirstOrDefault(x => x.Name == text_channel);
@@ -42,7 +59,7 @@ namespace Maya
             return null;
         }
 
-        public static SocketGuild findGuild(DiscordSocketClient discord, string guild_name)
+        public static SocketGuild FindGuild(DiscordSocketClient discord, string guild_name)
         {
             var cs = discord.Guilds;
             SocketGuild r = cs.Where(x => x.Name == guild_name).FirstOrDefault();
@@ -54,7 +71,7 @@ namespace Maya
             return null;
         }
 
-        public static string getRandomWeightedChoice(string[,] arr)
+        public static string GetRandomWeightedChoice(string[,] arr)
         {
             Random r = new Random();
             int total = 0;

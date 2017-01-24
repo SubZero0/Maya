@@ -24,7 +24,7 @@ namespace Maya.Music
             Status = MusicStatus.NEW;
         }
 
-        public int timeUntilEnd()
+        public int GetTimeUntilEnd()
         {
             if (Duration == null)
                 return 0;
@@ -34,7 +34,7 @@ namespace Maya.Music
                 return (int)new TimeSpan(0, 0, (int)Duration?.TotalSeconds - ((int)DateTime.Now.Subtract(StartTime.GetValueOrDefault()).TotalSeconds)).TotalSeconds;
         }
 
-        public string timePlaying()
+        public string GetTimePlaying()
         {
             if (StartTime  == null || Duration == null)
                 return "0:00";

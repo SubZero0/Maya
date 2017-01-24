@@ -10,10 +10,10 @@ namespace Maya.Attributes
 {
     public class RequiredAttribute : ParameterPreconditionAttribute
     {
-        private string _text;
+        public string Text { get; private set; }
         public RequiredAttribute(string text = null)
         {
-            _text = text;
+            Text = text;
         }
 
         public override Task<PreconditionResult> CheckPermissions(ICommandContext context, ParameterInfo parameter, object value, IDependencyMap map)
@@ -25,10 +25,10 @@ namespace Maya.Attributes
 
             MayaCommandContext con = context as MayaCommandContext;
             string cmdline;
-            if (_text == null)
-                cmdline = $"**Usage**: {con.MainHandler.getCommandPrefix(con.Channel)}{parameter.Command.Aliases.First()} [{String.Join("] [", parameter.Command.Parameters.Select(x => x.Name))}]";
+            if (Text == null)
+                cmdline = $"**Usage**: {con.MainHandler.GetCommandPrefix(con.Channel)}{parameter.Command.Aliases.First()} [{String.Join("] [", parameter.Command.Parameters.Select(x => x.Name))}]";
             else
-                cmdline = $"**Usage**: {con.MainHandler.getCommandPrefix(con.Channel)}{parameter.Command.Aliases.First()} {_text}";
+                cmdline = $"**Usage**: {con.MainHandler.GetCommandPrefix(con.Channel)}{parameter.Command.Aliases.First()} [{Text}]";
             return Task.FromResult(PreconditionResult.FromError(cmdline));
         }
     }

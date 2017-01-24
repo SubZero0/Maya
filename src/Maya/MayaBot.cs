@@ -14,7 +14,7 @@ namespace Maya
         private DiscordSocketClient Discord;
         private MainHandler MainHandler;
 
-        public async Task Run()
+        public async Task RunAsync()
         {
             if (!Directory.Exists("Temp"))
                 Directory.CreateDirectory("Temp");
@@ -25,7 +25,8 @@ namespace Maya
             Discord = new DiscordSocketClient(new DiscordSocketConfig()
             {
                 AudioMode = AudioMode.Outgoing,
-                LogLevel = LogSeverity.Info
+                LogLevel = LogSeverity.Error,
+                DownloadUsersOnGuildAvailable = true
             });
 
             Discord.Log += (message) =>
@@ -39,15 +40,16 @@ namespace Maya
 
             MainHandler = new MainHandler(Discord);
             Discord.GuildAvailable += MainHandler.GuildAvailableEvent;
-            await MainHandler.InitializeEarly(map);
+            Discord.LeftGuild += MainHandler.LeftGuildEvent;
+            await MainHandler.InitializeEarlyAsync(map);
 
-            await Discord.LoginAsync(TokenType.Bot, MainHandler.ConfigHandler.getBotToken());
+            await Discord.LoginAsync(TokenType.Bot, MainHandler.ConfigHandler.GetBotToken());
             await Discord.ConnectAsync();
             Console.WriteLine("Connected!");
 
             await Discord.SetGameAsync(null);
 
-            await MainHandler.InitializeLater();
+            await MainHandler.InitializeLaterAsync();
 
             await Task.Delay(-1);
         }

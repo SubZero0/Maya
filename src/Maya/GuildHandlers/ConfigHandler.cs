@@ -1,4 +1,5 @@
 ﻿using Discord;
+using Maya.Interfaces;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
@@ -10,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace Maya.GuildHandlers
 {
-    public class ConfigHandler
+    public class ConfigHandler : IGuildHandler
     {
         private GuildHandler GuildHandler;
         private JObject config;
@@ -20,12 +21,17 @@ namespace Maya.GuildHandlers
             config = null;
         }
 
-        public async Task Initialize()
+        public async Task InitializeAsync()
         {
-            await load();
+            await LoadAsync();
         }
 
-        public async Task load()
+        public Task Close()
+        {
+            return Task.CompletedTask;
+        }
+
+        public async Task LoadAsync()
         {
             await Task.Run(() =>
             {
@@ -33,58 +39,63 @@ namespace Maya.GuildHandlers
             });
         }
 
-        public string getCommandPrefix()
+        public string GetCommandPrefix()
         {
             return (string)config["CommandPrefix"];
         }
 
-        public bool isChannelAllowed(IChannel channel)
+        public bool IsChannelAllowed(IChannel channel)
         {
-            return Utils.isChannelListed(channel, config["AllowedChannels"].ToObject<List<string>>());
+            return Utils.IsChannelListed(channel, config["AllowedChannels"].ToObject<List<string>>());
         }
 
-        public WrapperNF getNotifications()
+        public WrapperNF GetNotifications()
         {
             return new WrapperNF((JObject)config["Notifications"]);
         }
 
-        public WrapperNF getForumUpdates()
+        public WrapperNF GetForumUpdates()
         {
             return new WrapperNF((JObject)config["ForumUpdates"]);
         }
 
-        public WrapperM getMusic()
+        public WrapperM GetMusic()
         {
             return new WrapperM((JObject)config["Music"]);
         }
 
-        public WrapperCS getChatterBot()
+        public WrapperCSA GetChatterBot()
         {
-            return new WrapperCS((JObject)config["ChatterBot"]);
+            return new WrapperCSA((JObject)config["ChatterBot"]);
         }
 
-        public WrapperCS getSwearJar()
+        public WrapperCSA GetSwearJar()
         {
-            return new WrapperCS((JObject)config["SwearJar"]);
+            return new WrapperCSA((JObject)config["SwearJar"]);
+        }
+
+        public WrapperCSA GetAutoResponse()
+        {
+            return new WrapperCSA((JObject)config["AutoResponse"]);
         }
     }
     public class WrapperNF
     {
-        public WrapperNF(JObject obj) { isEnabled = (bool)obj["Enabled"]; TextChannel = (string)obj["TextChannel"]; }
-        public bool isEnabled { get; private set; }
+        public WrapperNF(JObject obj) { IsEnabled = (bool)obj["Enabled"]; TextChannel = (string)obj["TextChannel"]; }
+        public bool IsEnabled { get; private set; }
         public string TextChannel { get; private set; }
     }
     public class WrapperM
     {
-        public WrapperM(JObject obj) { isEnabled = (bool)obj["Enabled"]; TextChannels = obj["TextChannels"].ToObject<List<string>>(); VoiceChannel = (string)obj["VoiceChannel"]; }
-        public bool isEnabled { get; private set; }
+        public WrapperM(JObject obj) { IsEnabled = (bool)obj["Enabled"]; TextChannels = obj["TextChannels"].ToObject<List<string>>(); VoiceChannel = (string)obj["VoiceChannel"]; }
+        public bool IsEnabled { get; private set; }
         public List<string> TextChannels { get; private set; }
         public string VoiceChannel { get; private set; }
     }
-    public class WrapperCS
+    public class WrapperCSA
     {
-        public WrapperCS(JObject obj) { isEnabled = (bool)obj["Enabled"]; TextChannels = obj["TextChannels"].ToObject<List<string>>(); }
-        public bool isEnabled { get; private set; }
+        public WrapperCSA(JObject obj) { IsEnabled = (bool)obj["Enabled"]; TextChannels = obj["TextChannels"].ToObject<List<string>>(); }
+        public bool IsEnabled { get; private set; }
         public List<string> TextChannels { get; private set; }
     }
 }

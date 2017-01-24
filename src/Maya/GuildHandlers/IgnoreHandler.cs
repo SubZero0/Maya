@@ -1,4 +1,5 @@
 ﻿using Discord;
+using Maya.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,44 +7,50 @@ using System.Threading.Tasks;
 
 namespace Maya.GuildHandlers
 {
-    public class IgnoreHandler
+    public class IgnoreHandler : IGuildHandler
     {
         private GuildHandler GuildHandler;
-        private List<ulong> ignore_list;
+        private List<ulong> ignoreList;
         public IgnoreHandler(GuildHandler GuildHandler)
         {
             this.GuildHandler = GuildHandler;
-            ignore_list = new List<ulong>();
+            ignoreList = new List<ulong>();
         }
 
-        public void Initialize()
+        public Task InitializeAsync()
         {
-            ignore_list.AddRange(GuildHandler.DatabaseHandler.getIgnoreList());
+            ignoreList.AddRange(GuildHandler.DatabaseHandler.GetIgnoreList());
+            return Task.CompletedTask;
         }
 
-        public void save()
+        public Task Close()
         {
-            GuildHandler.DatabaseHandler.setIgnoreList(ignore_list);
+            return Task.CompletedTask;
         }
 
-        public void add(ulong id)
+        public void Save()
         {
-            ignore_list.Add(id);
-            save();
+            GuildHandler.DatabaseHandler.SetIgnoreList(ignoreList);
         }
 
-        public void remove(ulong id)
+        public void Add(ulong id)
         {
-            if (contains(id))
+            ignoreList.Add(id);
+            Save();
+        }
+
+        public void Remove(ulong id)
+        {
+            if (Contains(id))
             {
-                ignore_list.Remove(id);
-                save();
+                ignoreList.Remove(id);
+                Save();
             }
         }
 
-        public bool contains(ulong id)
+        public bool Contains(ulong id)
         {
-            return ignore_list.Contains(id);
+            return ignoreList.Contains(id);
         }
     }
 }

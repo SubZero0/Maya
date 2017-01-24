@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Maya.Chatterbot;
+using Maya.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Maya.Handlers
 {
-    public class BotHandler
+    public class BotHandler : IHandler
     {
         private ChatterBot bot;
         private ChatterBotSession session;
@@ -19,7 +20,7 @@ namespace Maya.Handlers
             ready = false;
         }
 
-        public async Task Initialize()
+        public async Task InitializeAsync()
         {
             ready = false;
             ChatterBotFactory factory = new ChatterBotFactory();
@@ -29,26 +30,31 @@ namespace Maya.Handlers
             ready = true;
         }
 
-        public async Task<string> Think(string text)
+        public Task Close()
+        {
+            return Task.CompletedTask;
+        }
+
+        public async Task<string> ThinkAsync(string text)
         {
             return await session.Think(text);
         }
 
-        public bool isReady()
+        public bool IsReady()
         {
             return bot != null && session != null && ready;
         }
 
-        public async Task Talk(IMessageChannel c, string text)
+        public async Task TalkAsync(IMessageChannel c, string text)
         {
-            if (!isReady())
+            if (!IsReady())
             {
                 await c.SendMessageAsync("Loading...");
                 return;
             }
             using (c.EnterTypingState())
             {
-                await c.SendMessageAsync(await Think(text));
+                await c.SendMessageAsync(await ThinkAsync(text));
             }
         }
     }

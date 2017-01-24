@@ -22,4 +22,8 @@
     "Enabled": true,
     "TextChannels": []
   }
+  "AutoResponse": {
+    "Enabled": true,
+    "TextChannels": []
+  }
 }

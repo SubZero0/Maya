@@ -25,13 +25,13 @@ namespace Maya.Controllers
         public BotHandler BotHandler { get; private set; }
 
         //Guild Handlers
-        private Dictionary<ulong, GuildHandler> guilds = new Dictionary<ulong, GuildHandler>();
+        private Dictionary<ulong, GuildHandler> guilds;
 
         //One-time Functions
         private ForumUpdater forumUpdater;
-
         public MainHandler(DiscordSocketClient Discord)
         {
+            guilds = new Dictionary<ulong, GuildHandler>();
             Client = Discord;
             ConfigHandler = new Handlers.ConfigHandler();
             CommandHandler = new CommandHandler();
@@ -42,32 +42,56 @@ namespace Maya.Controllers
             forumUpdater = new ForumUpdater(this);
         }
 
-        public async Task InitializeEarly(IDependencyMap map)
-        {
-            await ConfigHandler.Initialize();
-            await CommandHandler.Install(this, map);
-            TextHandler.Initialize(ConfigHandler.getSwearString());
-            await ShipHandler.Initialize();
-            await BotHandler.Initialize();
-        }
-
-        public async Task InitializeLater()
-        {
-            forumUpdater.Initialize();
-            await Task.CompletedTask;
-        }
-
         internal async Task GuildAvailableEvent(SocketGuild guild)
         {
-            GuildHandler gh = new GuildHandler(this, guild);
-            await gh.Initialize();
-            guilds[guild.Id] = gh;
+            if (guilds.ContainsKey(guild.Id))
+                await guilds[guild.Id].RenewGuildObject(guild);
+            else
+            {
+                GuildHandler gh = new GuildHandler(this, guild);
+                await gh.InitializeAsync();
+                guilds[guild.Id] = gh;
+            }
         }
 
-        public async Task ReloadGuild(SocketGuild guild)
+        internal Task LeftGuildEvent(SocketGuild guild)
         {
+            if (guilds.ContainsKey(guild.Id))
+                guilds[guild.Id].DeleteGuildFolder();
+            return Task.CompletedTask;
+        }
+
+        public async Task InitializeEarlyAsync(IDependencyMap map)
+        {
+            await ConfigHandler.InitializeAsync();
+            await CommandHandler.InitializeAsync(this, map);
+            await TextHandler.InitializeAsync(ConfigHandler.GetSwearString());
+            await ShipHandler.InitializeAsync();
+            await BotHandler.InitializeAsync();
+        }
+
+        public async Task InitializeLaterAsync()
+        {
+            await forumUpdater.Initialize();
+        }
+
+        public async Task Close()
+        {
+            foreach (ulong id in guilds.Keys)
+                await guilds[id].Close();
+            await ConfigHandler.Close();
+            await CommandHandler.Close();
+            await TextHandler.Close();
+            await ShipHandler.Close();
+            await BotHandler.Close();
+        }
+
+        public async Task ReloadGuildAsync(SocketGuild guild)
+        {
+            if (guilds.ContainsKey(guild.Id))
+                await guilds[guild.Id].Close();
             GuildHandler gh = new GuildHandler(this, guild);
-            await gh.Initialize();
+            await gh.InitializeAsync();
             guilds[guild.Id] = gh;
         }
 
@@ -120,11 +144,11 @@ namespace Maya.Controllers
             return guilds[guild.Id].PersonalityHandler;
         }
 
-        public string getCommandPrefix(IChannel channel)
+        public string GetCommandPrefix(IChannel channel)
         {
             if (channel is ITextChannel)
-                return GuildConfigHandler((channel as ITextChannel).Guild).getCommandPrefix();
-            return ConfigHandler.getDefaultCommandPrefix();
+                return GuildConfigHandler((channel as ITextChannel).Guild).GetCommandPrefix();
+            return ConfigHandler.GetDefaultCommandPrefix();
         }
     }
 }

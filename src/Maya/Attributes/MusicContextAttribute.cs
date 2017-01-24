@@ -12,28 +12,28 @@ namespace Maya.Attributes
 {
     public class MusicContextAttribute : PreconditionAttribute
     {
-        public async override Task<PreconditionResult> CheckPermissions(ICommandContext context, CommandInfo command, IDependencyMap map)
+        public async override Task<PreconditionResult> CheckPermissions(ICommandContext context, CommandInfo command, IDependencyMap map) //TODO: Remover connect aqui
         {
             if (!(context.Channel is ITextChannel))
                 return PreconditionResult.FromError("null");
             if (!(context is MayaCommandContext))
                 return PreconditionResult.FromError("null");
             MayaCommandContext con = context as MayaCommandContext;
-            if (!con.MainHandler.GuildConfigHandler(con.Guild).getMusic().isEnabled)
+            if (!con.MainHandler.GuildConfigHandler(con.Guild).GetMusic().IsEnabled)
                 return PreconditionResult.FromError("Music system disabled.");
-            if (!con.MainHandler.GuildMusicHandler(con.Guild).isReady())
+            if (!con.MainHandler.GuildMusicHandler(con.Guild).IsReady())
                 return PreconditionResult.FromError("Music system not ready.");
-            MusicResult mr = con.MainHandler.GuildMusicHandler(con.Guild).canUserUseMusicCommands(new MusicContext(context));
+            MusicResult mr = con.MainHandler.GuildMusicHandler(con.Guild).CanUserUseMusicCommands(new MusicContext(context));
             if (!mr.IsSuccessful)
                 return PreconditionResult.FromError(mr.Error);
-            IVoiceChannel vc = con.MainHandler.GuildMusicHandler(con.Guild).getVoiceChannel();
-            IVoiceChannel channel = await Utils.findVoiceChannel(con.Guild as SocketGuild, con.MainHandler.GuildConfigHandler(con.Guild).getMusic().VoiceChannel);
+            IVoiceChannel vc = con.MainHandler.GuildMusicHandler(con.Guild).GetVoiceChannel();
+            IVoiceChannel channel = await Utils.FindVoiceChannel(con.Guild as SocketGuild, con.MainHandler.GuildConfigHandler(con.Guild).GetMusic().VoiceChannel);
             if (channel == null)
-                return PreconditionResult.FromError($"Missing voice channel ({con.MainHandler.GuildConfigHandler(con.Guild).getMusic().VoiceChannel}).");
-            else if(vc==null)
-                await con.MainHandler.GuildMusicHandler(con.Guild).JoinVoiceChannel(channel);
-            else if(vc != channel && !con.MainHandler.GuildMusicHandler(con.Guild).shouldDownload()) //!download = doing nothing
-                await con.MainHandler.GuildMusicHandler(con.Guild).JoinVoiceChannel(channel);
+                return PreconditionResult.FromError($"Missing voice channel ({con.MainHandler.GuildConfigHandler(con.Guild).GetMusic().VoiceChannel}).");
+            else if (vc == null)
+                await con.MainHandler.GuildMusicHandler(con.Guild).JoinVoiceChannelAsync(channel);
+            else if (vc != channel && !con.MainHandler.GuildMusicHandler(con.Guild).ShouldDownload()) //!download = doing nothing
+                await con.MainHandler.GuildMusicHandler(con.Guild).JoinVoiceChannelAsync(channel);
             return PreconditionResult.FromSuccess();
         }
     }

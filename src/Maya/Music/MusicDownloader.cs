@@ -19,7 +19,7 @@ namespace Maya.Music
             context.Song.Status = MusicStatus.DOWNLOADING;
         }
 
-        public async Task Run()
+        public async Task RunAsync()
         {
             switch (context.Song.Provider)
             {
@@ -31,7 +31,7 @@ namespace Maya.Music
             }
         }
 
-        public async Task Youtube()
+        private async Task Youtube()
         {
             try
             {

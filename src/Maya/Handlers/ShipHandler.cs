@@ -1,4 +1,5 @@
 ﻿using Maya.Controllers;
+using Maya.Interfaces;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -8,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Maya.WoWS
 {
-    public class ShipHandler
+    public class ShipHandler : IHandler
     {
         private MainHandler MainHandler;
         private Dictionary<string, IShip> ships;
@@ -23,7 +24,7 @@ namespace Maya.WoWS
             shipPlayers = new Dictionary<ulong, ShipPlayer>();
         }
 
-        public async Task Initialize()
+        public async Task InitializeAsync()
         {
             ready = false;
             ships.Clear();
@@ -56,12 +57,17 @@ namespace Maya.WoWS
             ready = true;
         }
 
-        public Nullable<Boolean> isReady()
+        public Task Close()
+        {
+            return Task.CompletedTask;
+        }
+
+        public Nullable<Boolean> IsReady()
         {
             return ready;
         }
 
-        public List<IShip> searchShips(string name)
+        public List<IShip> SearchShips(string name)
         {
             name = name.ToLower();
             List<IShip> lista = new List<IShip>();
@@ -76,12 +82,12 @@ namespace Maya.WoWS
             return lista;
         }
 
-        public string[] getShipList()
+        public string[] GetShipList()
         {
             return ships.Keys.ToArray();
         }
 
-        public string shipNation(string nation)
+        public string ShipNation(string nation)
         {
             switch (nation)
             {
@@ -98,7 +104,7 @@ namespace Maya.WoWS
             }
         }
 
-        public string shipType(string type)
+        public string ShipType(string type)
         {
             switch (type)
             {
@@ -110,7 +116,7 @@ namespace Maya.WoWS
             }
         }
 
-        public string shipTier(int tier)
+        public string ShipTier(int tier)
         {
             switch (tier)
             {
@@ -128,7 +134,7 @@ namespace Maya.WoWS
             }
         }
 
-        public async Task<JObject> getMaxShip(string search)
+        public async Task<JObject> GetMaxShipAsync(string search)
         {
             using (var httpClient = new HttpClient())
             {
@@ -141,12 +147,12 @@ namespace Maya.WoWS
             }
         }
 
-        public Dictionary<string, JObject> torpedoes_cache = new Dictionary<string, JObject>();
-        public async Task<JObject> getTorpedoes(string search, string torpedoes_id)
+        public Dictionary<string, JObject> torpedoesCache = new Dictionary<string, JObject>();
+        public async Task<JObject> GetTorpedoesAsync(string search, string torpedoes_id)
         {
             search += "&torpedoes_id=" + torpedoes_id;
-            if (torpedoes_cache.ContainsKey(search))
-                return torpedoes_cache[search];
+            if (torpedoesCache.ContainsKey(search))
+                return torpedoesCache[search];
             using (var httpClient = new HttpClient())
             {
                 string link = $"https://api.worldofwarships.com/wows/encyclopedia/shipprofile/?application_id=ca60f30d0b1f91b195a521d4aa618eee{search}";
@@ -155,7 +161,7 @@ namespace Maya.WoWS
                 if ((String)json["status"] == "ok")
                 {
                     JObject ship = (JObject)((JObject)json["data"]).Values().First();
-                    torpedoes_cache.Add(search, ship);
+                    torpedoesCache.Add(search, ship);
                     return ship;
                 }
                 return null;

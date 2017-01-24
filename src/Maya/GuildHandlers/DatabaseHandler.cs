@@ -1,4 +1,5 @@
 ﻿using Discord;
+using Maya.Interfaces;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
@@ -11,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace Maya.GuildHandlers
 {
-    public class DatabaseHandler
+    public class DatabaseHandler : IGuildHandler
     {
         private GuildHandler GuildHandler;
         private JObject db;
@@ -23,17 +24,23 @@ namespace Maya.GuildHandlers
             timer = new Timer(Timer_Elapsed, null, Timeout.Infinite, Timeout.Infinite);
         }
 
-        public async Task Initialize()
+        public async Task InitializeAsync()
         {
-            await load();
+            await LoadAsync();
+        }
+
+        public async Task Close()
+        {
+            await SaveAsync();
+            timer.Dispose();
         }
 
         private async void Timer_Elapsed(object state)
         {
-            await save();
+            await SaveAsync();
         }
 
-        public async Task save()
+        public async Task SaveAsync()
         {
             timer.Change(Timeout.Infinite, Timeout.Infinite);
             await Task.Run(() =>
@@ -42,7 +49,7 @@ namespace Maya.GuildHandlers
             });
         }
 
-        public async Task load()
+        public async Task LoadAsync()
         {
             await Task.Run(() =>
             {
@@ -50,29 +57,29 @@ namespace Maya.GuildHandlers
             });
         }
 
-        public double getSwearJar()
+        public double GetSwearJar()
         {
             if (db == null)
                 return 0;
             return (double)db["SwearJar"];
         }
 
-        public void addSwearJar(double a)
+        public void AddSwearJar(double a)
         {
             if (db == null)
                 return;
-            db["SwearJar"] = getSwearJar() + a;
+            db["SwearJar"] = GetSwearJar() + a;
             timer.Change(300000, Timeout.Infinite);
         }
 
-        public string getPersonality()
+        public string GetPersonality()
         {
             if (db == null)
                 return null;
             return (string)db["CurrentPersonality"];
         }
 
-        public void setPersonality(string name)
+        public void SetPersonality(string name)
         {
             if (db == null)
                 return;
@@ -80,14 +87,14 @@ namespace Maya.GuildHandlers
             timer.Change(300000, Timeout.Infinite);
         }
 
-        public List<ulong> getIgnoreList()
+        public List<ulong> GetIgnoreList()
         {
             if (db == null)
                 return null;
            return db["IgnoreList"].ToObject<List<ulong>>();
         }
 
-        public void setIgnoreList(List<ulong> ids)
+        public void SetIgnoreList(List<ulong> ids)
         {
             if (db == null)
                 return;
@@ -95,7 +102,7 @@ namespace Maya.GuildHandlers
             timer.Change(300000, Timeout.Infinite);
         }
 
-        public bool isDbReady()
+        public bool IsReady()
         {
             return (db != null);
         }

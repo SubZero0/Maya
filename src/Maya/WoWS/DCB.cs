@@ -22,17 +22,17 @@ namespace Maya.WoWS
             search = "";
         }
 
-        public string getName()
+        public string GetName()
         {
             return (String)ship["name"];
         }
 
-        public string getImageUrl()
+        public string GetImageUrl()
         {
             return (string)((JObject)ship["images"])["small"];
         }
 
-        public async Task updateData()
+        public async Task UpdateDataAsync()
         {
             search = "&ship_id=" + ship["ship_id"];
             Dictionary<string, JObject> best_modules = new Dictionary<string, JObject>();
@@ -56,19 +56,19 @@ namespace Maya.WoWS
                 }
                 search += (best_modules[s])["module_id"];
             }
-            ship_max = await MainHandler.ShipHandler.getMaxShip(search);
+            ship_max = await MainHandler.ShipHandler.GetMaxShipAsync(search);
         }
 
-        public string getHeadStats()
+        public string GetHeadStats()
         {
-            return MainHandler.ShipHandler.shipNation((String)ship["nation"]) + " " + MainHandler.ShipHandler.shipType((String)ship["type"]) + " " + ship["name"] + " (Tier " + MainHandler.ShipHandler.shipTier((int)ship["tier"]) + ")";
+            return MainHandler.ShipHandler.ShipNation((String)ship["nation"]) + " " + MainHandler.ShipHandler.ShipType((String)ship["type"]) + " " + ship["name"] + " (Tier " + MainHandler.ShipHandler.ShipTier((int)ship["tier"]) + ")";
         }
 
-        public async Task<string> getSimpleStats()
+        public async Task<string> GetSimpleStatsAsync()
         {
             if (ship_max == null)
             {
-                await updateData();
+                await UpdateDataAsync();
                 if (ship_max == null)
                     return "A problem occurred while getting the max stats from this ship.";
             }
@@ -104,7 +104,7 @@ namespace Maya.WoWS
                     if (torpedoes_id == default_torpedo_id)
                         gtorps = default_torpedoes;
                     else
-                        gtorps = await MainHandler.ShipHandler.getTorpedoes(search, torpedoes_id);
+                        gtorps = await MainHandler.ShipHandler.GetTorpedoesAsync(search, torpedoes_id);
                     if (gtorps == null)
                         continue;
                     JObject torps = (JObject)gtorps["torpedoes"];

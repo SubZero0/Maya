@@ -1,10 +1,11 @@
-﻿using Discord.Commands;
-using Discord.WebSocket;
+﻿using Discord.WebSocket;
+using Maya.ModulesAddons;
 
 namespace Maya.Roslyn
 {
     public class Globals
     {
-        public ICommandContext Context;
+        public MayaCommandContext Context;
+        public SocketGuild Guild;
     }
 }

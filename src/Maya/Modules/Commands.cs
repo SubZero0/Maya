@@ -28,7 +28,8 @@ using Maya.GuildHandlers;
 
 namespace Maya.Modules.Commands
 {
-    public class GeneralCommands : ModuleCommand
+    [Name("General")]
+    public class GeneralCommands : ModuleBase<MayaCommandContext>
     {
         [Command("image")]
         [Alias("i")]
@@ -64,7 +65,7 @@ namespace Maya.Modules.Commands
         [Group("title")]
         [Summary("Main command for adding, deleting, and viewing titles")]
         [RequireContext(ContextType.Guild)]
-        public class TitleModule : ModuleCommand
+        public class TitleModule : ModuleBase<MayaCommandContext>
         {
             [Command]
             [Summary("Show titles")]
@@ -72,7 +73,7 @@ namespace Maya.Modules.Commands
             {
                 if (user == null)
                     user = Context.User as IGuildUser;
-                List<string> titles = Context.MainHandler.GuildTitleHandler(Context.Guild).getTitles(user);
+                List<string> titles = Context.MainHandler.GuildTitleHandler(Context.Guild).GetTitles(user);
                 if (titles.Count == 0)
                 {
                     await ReplyAsync($"**{user.Nickname ?? user.Username}** doesn't have any titles.");
@@ -90,7 +91,7 @@ namespace Maya.Modules.Commands
             [RequireAdmin]
             public async Task Add([Required] IGuildUser user = null, [Required, Remainder] string title = null)
             {
-                if (Context.MainHandler.GuildTitleHandler(Context.Guild).containsTitle(user, title))
+                if (Context.MainHandler.GuildTitleHandler(Context.Guild).ContainsTitle(user, title))
                 {
                     await ReplyAsync($"{user.Nickname ?? user.Username} already has 『{title}』.");
                     return;
@@ -100,8 +101,8 @@ namespace Maya.Modules.Commands
                     await ReplyAsync("Title exceeds length limit (> 150).");
                     return;
                 }
-                Context.MainHandler.GuildTitleHandler(Context.Guild).addTitle(user, title);
-                await ReplyAsync($":grey_exclamation: **{user.Nickname ?? user.Username}** got a new title! 『{title}』!");
+                Context.MainHandler.GuildTitleHandler(Context.Guild).AddTitle(user, title);
+                await ReplyAsync($"❕ **{user.Nickname ?? user.Username}** got a new title! 『{title}』!");
             }
 
             [Command("delete")]
@@ -109,13 +110,13 @@ namespace Maya.Modules.Commands
             [RequireAdmin]
             public async Task Delete([Required] IGuildUser user = null, [Required, Remainder] string title = null)
             {
-                if (!Context.MainHandler.GuildTitleHandler(Context.Guild).containsTitle(user, title))
+                if (!Context.MainHandler.GuildTitleHandler(Context.Guild).ContainsTitle(user, title))
                 {
                     await ReplyAsync("Title not found.");
                     return;
                 }
-                Context.MainHandler.GuildTitleHandler(Context.Guild).removeTitle(user, title);
-                await ReplyAsync($":grey_exclamation: **{user.Nickname ?? user.Username}** lost the title 『{title}』!");
+                Context.MainHandler.GuildTitleHandler(Context.Guild).RemoveTitle(user, title);
+                await ReplyAsync($"❕ **{user.Nickname ?? user.Username}** lost the title 『{title}』!");
             }
         }
 
@@ -124,12 +125,12 @@ namespace Maya.Modules.Commands
         [RequireContext(ContextType.Guild)]
         public async Task Swearjar()
         {
-            if (!Context.MainHandler.GuildDatabaseHandler(Context.Guild).isDbReady())
+            if (!Context.MainHandler.GuildDatabaseHandler(Context.Guild).IsReady())
             {
                 await ReplyAsync("Loading...");
                 return;
             }
-            await ReplyAsync($"The swear jar currently has {Convert.ToDecimal(Context.MainHandler.GuildDatabaseHandler(Context.Guild).getSwearJar()).ToString("C", new CultureInfo("en-US"))}.");
+            await ReplyAsync($"The swear jar currently has {Convert.ToDecimal(Context.MainHandler.GuildDatabaseHandler(Context.Guild).GetSwearJar()).ToString("C", new CultureInfo("en-US"))}.");
         }
 
         [Command("marry")]
@@ -138,12 +139,12 @@ namespace Maya.Modules.Commands
         [Cooldown(120)]
         public async Task Marry()
         {
-            if (!Context.MainHandler.GuildPersonalityHandler(Context.Guild).isReady())
+            if (!Context.MainHandler.GuildPersonalityHandler(Context.Guild).IsReady())
             {
                 await ReplyAsync("Loading...");
                 return;
             }
-            await ReplyAsync(Utils.getRandomWeightedChoice(Context.MainHandler.GuildPersonalityHandler(Context.Guild).getMarryAnswers()));
+            await ReplyAsync(Utils.GetRandomWeightedChoice(Context.MainHandler.GuildPersonalityHandler(Context.Guild).GetMarryAnswers()));
         }
 
         [Command("kill")]
@@ -151,7 +152,7 @@ namespace Maya.Modules.Commands
         [RequireContext(ContextType.Guild)]
         public async Task Kill([Required, Remainder] string who = null)
         {
-            if (!Context.MainHandler.GuildPersonalityHandler(Context.Guild).isReady())
+            if (!Context.MainHandler.GuildPersonalityHandler(Context.Guild).IsReady())
             {
                 await ReplyAsync("Loading...");
                 return;
@@ -162,13 +163,13 @@ namespace Maya.Modules.Commands
                 await ReplyAsync("I can't kill you :(");
             else if (who.Equals("paulo", StringComparison.OrdinalIgnoreCase) && Context.User.Id != (await Context.Client.GetApplicationInfoAsync()).Owner.Id)
                 await ReplyAsync("I can't kill Paulo...\n* stabs you *");
-            else if (who.Equals(Context.MainHandler.GuildPersonalityHandler(Context.Guild).getName(), StringComparison.OrdinalIgnoreCase) && await Context.MainHandler.PermissionHandler.isAtLeast(Context.User, AdminLevel.ADMIN))
+            else if (who.Equals(Context.MainHandler.GuildPersonalityHandler(Context.Guild).GetName(), StringComparison.OrdinalIgnoreCase) && await Context.MainHandler.PermissionHandler.IsAtLeastAsync(Context.User, AdminLevel.ADMIN))
             {
-                await ReplyAsync(Context.MainHandler.GuildPersonalityHandler(Context.Guild).getOfflineString());
+                await ReplyAsync(Context.MainHandler.GuildPersonalityHandler(Context.Guild).GetOfflineString());
                 await Task.Delay(1000);
                 Environment.Exit(0);
             }
-            else if (who.Equals("myself", StringComparison.OrdinalIgnoreCase) || who == Context.MainHandler.GuildPersonalityHandler(Context.Guild).getName().ToLower())
+            else if (who.Equals("myself", StringComparison.OrdinalIgnoreCase) || who == Context.MainHandler.GuildPersonalityHandler(Context.Guild).GetName().ToLower())
                 await ReplyAsync("I won't kill myself...\n* stabs you *");
             else if (who.Equals("me", StringComparison.OrdinalIgnoreCase))
                 await ReplyAsync($"It's my pleasure! ^-^\n* stabs {Context.User.Mention} *");
@@ -247,7 +248,7 @@ namespace Maya.Modules.Commands
         [Summary("Rate what you typed")]
         public async Task Rate([Required, Remainder] string text = null)
         {
-            await ReplyAsync($":thinking: I would rate '{text}' a {new Random().Next(11)}/10");
+            await ReplyAsync($"🤔 I would rate '{text}' a {new Random().Next(11)}/10");
         }
 
         [Command("meaning")]
@@ -279,7 +280,7 @@ namespace Maya.Modules.Commands
                             break;
                         }
                 EmbedBuilder eb = new EmbedBuilder();
-                eb.Title = $"Meaning: {text}";//TODO: Add a imagem do urban?
+                eb.Title = $"Meaning: {text}";//TODO: Add urban img?
                 eb.Color = Utils.getRandomColor();
                 eb.Description = output;
                 await ReplyAsync("", false, eb);
@@ -318,12 +319,12 @@ namespace Maya.Modules.Commands
                         {"Fruit salad","10"},
                         {"Potato","10"}
                     };
-            await ReplyAsync(Utils.getRandomWeightedChoice(a));
+            await ReplyAsync(Utils.GetRandomWeightedChoice(a));
         }
 
         [Command("quote")]
         [Summary("Quote user messages")]
-        public async Task ForceSave([Required] params string[] message_ids)
+        public async Task Quote([Required] params string[] message_ids)
         {
             List<IMessage> msgs = new List<IMessage>();
             IUser author = null;
@@ -380,18 +381,18 @@ namespace Maya.Modules.Commands
         [Group("tag")]
         [Summary("Main command for creating, deleting, editing, and viewing tags")]
         [RequireContext(ContextType.Guild)]
-        public class TagModule : ModuleCommand
+        public class TagModule : ModuleBase<MayaCommandContext>
         {
             [Command]
             [Summary("Show a tag")]
-            public async Task Tag([Required("[tag/create/edit/delete]"), Remainder] string tag = null)
+            public async Task Tag([Required("tag/create/edit/delete"), Remainder] string tag = null)
             {
-                if (!Context.MainHandler.GuildTagHandler(Context.Guild).containsTag(tag))
+                if (!Context.MainHandler.GuildTagHandler(Context.Guild).ContainsTag(tag))
                 {
                     await ReplyAsync("Tag not found.");
                     return;
                 }
-                Tag _tag = Context.MainHandler.GuildTagHandler(Context.Guild).getTag(tag);
+                Tag _tag = Context.MainHandler.GuildTagHandler(Context.Guild).GetTag(tag);
                 EmbedBuilder eb = new EmbedBuilder();
                 IUser user = await Context.Client.GetUserAsync(_tag.creator);
                 eb.Title = $"Tag: {_tag.tag}";
@@ -419,7 +420,7 @@ namespace Maya.Modules.Commands
             [Summary("Create a new tag")]
             public async Task Create([Required] string tag = null, [Required, Remainder] string text = null)
             {
-                if (Context.MainHandler.GuildTagHandler(Context.Guild).containsTag(tag) || tag.Equals("create",StringComparison.OrdinalIgnoreCase) || tag.Equals("delete", StringComparison.OrdinalIgnoreCase) || tag.Equals("edit", StringComparison.OrdinalIgnoreCase) || tag.Equals("info", StringComparison.OrdinalIgnoreCase) || tag.Equals("help", StringComparison.OrdinalIgnoreCase))
+                if (Context.MainHandler.GuildTagHandler(Context.Guild).ContainsTag(tag) || tag.Equals("create",StringComparison.OrdinalIgnoreCase) || tag.Equals("delete", StringComparison.OrdinalIgnoreCase) || tag.Equals("edit", StringComparison.OrdinalIgnoreCase) || tag.Equals("info", StringComparison.OrdinalIgnoreCase) || tag.Equals("help", StringComparison.OrdinalIgnoreCase))
                 {
                     await ReplyAsync("This tag already exists.");
                     return;
@@ -429,7 +430,7 @@ namespace Maya.Modules.Commands
                     await ReplyAsync("Text exceeds limit (> 1900).");
                     return;
                 }
-                Context.MainHandler.GuildTagHandler(Context.Guild).createTag(Context.User, tag, text);
+                Context.MainHandler.GuildTagHandler(Context.Guild).CreateTag(Context.User, tag, text);
                 await ReplyAsync($"Tag {tag} created!");
             }
 
@@ -437,18 +438,18 @@ namespace Maya.Modules.Commands
             [Summary("Delete an existing tag")]
             public async Task Delete([Required] string tag = null)
             {
-                if (!Context.MainHandler.GuildTagHandler(Context.Guild).containsTag(tag))
+                if (!Context.MainHandler.GuildTagHandler(Context.Guild).ContainsTag(tag))
                 {
                     await ReplyAsync("Tag not found.");
                     return;
                 }
-                Tag _tag = Context.MainHandler.GuildTagHandler(Context.Guild).getTag(tag);
-                if (!await Context.MainHandler.PermissionHandler.isAdmin(Context.User) && _tag.creator != Context.User.Id)
+                Tag _tag = Context.MainHandler.GuildTagHandler(Context.Guild).GetTag(tag);
+                if (!await Context.MainHandler.PermissionHandler.IsAdminAsync(Context.User) && _tag.creator != Context.User.Id)
                 {
                     await ReplyAsync("This tag isn't yours.");
                     return;
                 }
-                Context.MainHandler.GuildTagHandler(Context.Guild).removeTag(tag);
+                Context.MainHandler.GuildTagHandler(Context.Guild).RemoveTag(tag);
                 await ReplyAsync($"Tag {tag} deleted.");
             }
 
@@ -456,40 +457,24 @@ namespace Maya.Modules.Commands
             [Summary("Edit an existing tag")]
             public async Task Edit([Required] string tag = null, [Required, Remainder] string text = null)
             {
-                if (!Context.MainHandler.GuildTagHandler(Context.Guild).containsTag(tag))
+                if (!Context.MainHandler.GuildTagHandler(Context.Guild).ContainsTag(tag))
                 {
                     await ReplyAsync("Tag not found.");
                     return;
                 }
-                Tag _tag = Context.MainHandler.GuildTagHandler(Context.Guild).getTag(tag);
-                if (!await Context.MainHandler.PermissionHandler.isAdmin(Context.User) && _tag.creator != Context.User.Id)
+                Tag _tag = Context.MainHandler.GuildTagHandler(Context.Guild).GetTag(tag);
+                if (!await Context.MainHandler.PermissionHandler.IsAdminAsync(Context.User) && _tag.creator != Context.User.Id)
                 {
                     await ReplyAsync("This tag isn't yours.");
                     return;
                 }
-                Context.MainHandler.GuildTagHandler(Context.Guild).editTag(tag, text);
+                Context.MainHandler.GuildTagHandler(Context.Guild).EditTag(tag, text);
                 await ReplyAsync($"Tag {tag} edited.");
             }
-
-            /*[Command("help")] TODO: Remove?
-            [Summary("Show the command help")]
-            public async Task Help()
-            {
-                EmbedBuilder eb = new EmbedBuilder();
-                eb.Author = new EmbedAuthorBuilder().WithName("Help: ?tag").WithIconUrl("http://i.imgur.com/8X3AIRN.png");
-                eb.Color = new Color(100, 10, 200);
-                eb.Description = 
-                 "```?tag [tag]                 => Show a tag if it exists\n" +
-                    "?tag create [tag] [text]   => Create a tag with the text\n" +
-                    "?tag edit [tag] [text]     => Edit a tag (replace the text)\n" +
-                    "?tag delete [tag]          => Delete a tag\n" +
-                    "\n**[!] WARNING: Tag is 1-word only (no spaces allowed)!**";
-                await ReplyAsync("", false, eb);
-            }*/
         }
 
         [Command("info")]
-        [Summary("Get's the bot's application info")]
+        [Summary("Get the bot's application info")]
         public async Task Info()
         {
             var application = await Context.Client.GetApplicationInfoAsync();
@@ -513,31 +498,43 @@ namespace Maya.Modules.Commands
         }
     }
 
+    [Name("Admin")]
     [RequireAdmin]
-    public class AdminCommands : ModuleCommand
+    public class AdminCommands : ModuleBase<MayaCommandContext>
     {
-        [Command("eval")]
+        [Command("eval", RunMode = RunMode.Async)]
         [RequireAdmin(AdminLevel.OWNER)]
         public async Task Eval([Required, Remainder] string code = null)
         {
-            try
+            using (Context.Channel.EnterTypingState())
             {
-                var references = new List<MetadataReference>();
-                var referencedAssemblies = Assembly.GetEntryAssembly().GetReferencedAssemblies();
-                foreach (var referencedAssembly in referencedAssemblies)
-                    references.Add(MetadataReference.CreateFromFile(Assembly.Load(referencedAssembly).Location));
-                var scriptoptions = ScriptOptions.Default.WithReferences(references);
-                Globals globals = new Globals { Context = Context };
-                object o = await CSharpScript.EvaluateAsync(@"using System;using System.Linq;" + @code, scriptoptions, globals);
-                if (o == null)
-                    await ReplyAsync("Done!");
-                else
-                    await ReplyAsync("", false, new EmbedBuilder().WithTitle("Result:").WithDescription(o.ToString()));
+                try
+                {
+                    var references = new List<MetadataReference>();
+                    var referencedAssemblies = Assembly.GetEntryAssembly().GetReferencedAssemblies();
+                    foreach (var referencedAssembly in referencedAssemblies)
+                        references.Add(MetadataReference.CreateFromFile(Assembly.Load(referencedAssembly).Location));
+                    var scriptoptions = ScriptOptions.Default.WithReferences(references);
+                    Globals globals = new Globals { Context = Context, Guild = Context.Guild as SocketGuild };
+                    object o = await CSharpScript.EvaluateAsync(@"using System;using System.Linq;using System.Threading.Tasks;using Discord.WebSocket;using Discord;" + @code, scriptoptions, globals);
+                    if (o == null)
+                        await ReplyAsync("Done!");
+                    else
+                        await ReplyAsync("", false, new EmbedBuilder().WithTitle("Result:").WithDescription(o.ToString()));
+                }
+                catch (Exception e)
+                {
+                    await ReplyAsync("", false, new EmbedBuilder().WithTitle("Error:").WithDescription($"{e.GetType().ToString()}: {e.Message}\nFrom: {e.Source}"));
+                }
             }
-            catch (Exception e)
-            {
-                await ReplyAsync("", false, new EmbedBuilder().WithTitle("Error:").WithDescription($"{e.GetType().ToString()}: {e.Message}\nFrom: {e.Source}"));
-            }
+        }
+
+        [Command("clean")]
+        public async Task Clean(int messages = 30)
+        {
+            var msgs = await Context.Channel.GetMessagesAsync(messages).Flatten();
+            msgs = msgs.Where(x => x.Author.Id == Context.MainHandler.Client.CurrentUser.Id);
+            await Context.Channel.DeleteMessagesAsync(msgs);
         }
 
         [Command("nickname")]
@@ -605,25 +602,25 @@ namespace Maya.Modules.Commands
         [RequireContext(ContextType.Guild)]
         public async Task Forcesave()
         {
-            await Context.MainHandler.GuildTitleHandler(Context.Guild).saveTitles();
-            await Context.MainHandler.GuildTagHandler(Context.Guild).saveTags();
-            await Context.MainHandler.GuildDatabaseHandler(Context.Guild).save();
+            await Context.MainHandler.GuildTitleHandler(Context.Guild).SaveTitlesAsync();
+            await Context.MainHandler.GuildTagHandler(Context.Guild).SaveTagsAsync();
+            await Context.MainHandler.GuildDatabaseHandler(Context.Guild).SaveAsync();
             await ReplyAsync("Saved tags, titles, and DB.");
         }
 
         [Command("reload")]
-        public async Task Reload([Required("[shipcache/ships/shipsplayers/answers/config/guild/localconfig/localdb/localmusic]"), Remainder] string what = null)
+        public async Task Reload([Required("shipcache/ships/shipsplayers/answers/config/guild/localconfig/localdb/localmusic"), Remainder] string what = null)
         {
             switch (what)
             {
                 case "shipcache":
                     {
-                        Context.MainHandler.ShipHandler.torpedoes_cache.Clear();
+                        Context.MainHandler.ShipHandler.torpedoesCache.Clear();
                         break;
                     }
                 case "ships":
                     {
-                        await Context.MainHandler.ShipHandler.Initialize();
+                        await Context.MainHandler.ShipHandler.InitializeAsync();
                         break;
                     }
                 case "shipsplayers":
@@ -633,13 +630,13 @@ namespace Maya.Modules.Commands
                     }
                 case "answers":
                     {
-                        Context.MainHandler.TextHandler.resetInterferenceTime();
+                        Context.MainHandler.TextHandler.ResetInterferenceTime();
                         //await Answers.initialize(); TODO: Here...
                         break;
                     }
                 case "config":
                     {
-                        await Context.MainHandler.ConfigHandler.load();
+                        await Context.MainHandler.ConfigHandler.LoadAsync();
                         break;
                     }
                 case "guild":
@@ -649,7 +646,7 @@ namespace Maya.Modules.Commands
                             await ReplyAsync("You aren't in a guild channel!");
                             return;
                         }
-                        await Context.MainHandler.ReloadGuild((Context.Channel as ITextChannel).Guild as SocketGuild);
+                        await Context.MainHandler.ReloadGuildAsync((Context.Channel as ITextChannel).Guild as SocketGuild);
                         break;
                     }
                 case "localconfig":
@@ -659,7 +656,7 @@ namespace Maya.Modules.Commands
                             await ReplyAsync("You aren't in a guild channel!");
                             return;
                         }
-                        await Context.MainHandler.GuildConfigHandler(Context.Guild).load();
+                        await Context.MainHandler.GuildConfigHandler(Context.Guild).LoadAsync();
                         break;
                     }
                 case "localdb":
@@ -669,7 +666,7 @@ namespace Maya.Modules.Commands
                             await ReplyAsync("You aren't in a guild channel!");
                             return;
                         }
-                        await Context.MainHandler.GuildDatabaseHandler(Context.Guild).load();
+                        await Context.MainHandler.GuildDatabaseHandler(Context.Guild).LoadAsync();
                         break;
                     }
                 case "localmusic":
@@ -679,7 +676,7 @@ namespace Maya.Modules.Commands
                             await ReplyAsync("You aren't in a guild channel!");
                             return;
                         }
-                        await Context.MainHandler.GuildMusicHandler(Context.Guild).Reset();
+                        await Context.MainHandler.GuildMusicHandler(Context.Guild).ResetAsync();
                         break;
                     }
                 default:
@@ -695,15 +692,15 @@ namespace Maya.Modules.Commands
         [RequireContext(ContextType.Guild)]
         public async Task Personality([Required] string name = null, bool change_avatar = false)
         {
-            if (!Context.MainHandler.GuildPersonalityHandler(Context.Guild).hasPersonality(name))
+            if (!Context.MainHandler.GuildPersonalityHandler(Context.Guild).ExistsPersonality(name))
             {
                 await ReplyAsync("Personality not found!");
                 return;
             }
-            await Context.MainHandler.GuildPersonalityHandler(Context.Guild).loadPersonality(name);
+            await Context.MainHandler.GuildPersonalityHandler(Context.Guild).LoadPersonalityAsync(name);
             if(change_avatar)
             {
-                String url = Context.MainHandler.GuildPersonalityHandler(Context.Guild).getAvatarUrl();
+                String url = Context.MainHandler.GuildPersonalityHandler(Context.Guild).GetAvatarUrl();
                 MemoryStream imgStream = null;
                 try
                 {
@@ -730,12 +727,12 @@ namespace Maya.Modules.Commands
         [RequireContext(ContextType.Guild)]
         public async Task Ignore([Required, Remainder] IUser user = null)
         {
-            if(Context.MainHandler.GuildIgnoreHandler(Context.Guild).contains(user.Id))
+            if(Context.MainHandler.GuildIgnoreHandler(Context.Guild).Contains(user.Id))
             {
                 await ReplyAsync($"{user.Username}#{user.Discriminator} is already being ignored.");
                 return;
             }
-            Context.MainHandler.GuildIgnoreHandler(Context.Guild).add(user.Id);
+            Context.MainHandler.GuildIgnoreHandler(Context.Guild).Add(user.Id);
             await ReplyAsync($"Ignoring {user.Username}#{user.Discriminator}...");
         }
 
@@ -743,12 +740,12 @@ namespace Maya.Modules.Commands
         [RequireContext(ContextType.Guild)]
         public async Task Unignore([Required, Remainder] IUser user = null)
         {
-            if (!Context.MainHandler.GuildIgnoreHandler(Context.Guild).contains(user.Id))
+            if (!Context.MainHandler.GuildIgnoreHandler(Context.Guild).Contains(user.Id))
             {
                 await ReplyAsync($"{user.Username}#{user.Discriminator} isn't being ignored.");
                 return;
             }
-            Context.MainHandler.GuildIgnoreHandler(Context.Guild).remove(user.Id);
+            Context.MainHandler.GuildIgnoreHandler(Context.Guild).Remove(user.Id);
             await ReplyAsync($"Unignoring {user.Username}#{user.Discriminator}...");
         }
 
@@ -756,12 +753,13 @@ namespace Maya.Modules.Commands
         [RequireContext(ContextType.Guild)]
         public async Task Voice([Required, Remainder] IVoiceChannel channel = null)
         {
-            await Context.MainHandler.GuildMusicHandler(Context.Guild).JoinVoiceChannel(channel);
+            await Context.MainHandler.GuildMusicHandler(Context.Guild).JoinVoiceChannelAsync(channel);
             await ReplyAsync($"Joining {channel.Name}...");
         }
     }
 
-    public class WowsCommands : ModuleCommand
+    [Name("WoWS")]
+    public class WowsCommands : ModuleBase<MayaCommandContext>
     {
         [Command("ship")]
         [Summary("Show information about a ship")]
@@ -792,36 +790,36 @@ namespace Maya.Modules.Commands
                     return;
                 }
             }
-            if (Context.MainHandler.ShipHandler.isReady() == null)
+            if (Context.MainHandler.ShipHandler.IsReady() == null)
             {
                 await ReplyAsync("It wasn't possible to establish a connection to the ship database.");
                 return;
             }
-            if (!Context.MainHandler.ShipHandler.isReady().GetValueOrDefault())
+            if (!Context.MainHandler.ShipHandler.IsReady().GetValueOrDefault())
             {
                 await ReplyAsync("Loading ship database.");
                 return;
             }
-            List<IShip> r = Context.MainHandler.ShipHandler.searchShips(ship);
+            List<IShip> r = Context.MainHandler.ShipHandler.SearchShips(ship);
             if (r.Count() == 0)
                 await ReplyAsync("No ships found with or containing that name.");
             else if (r.Count() > 1)
             {
-                string r_string = r[0].getName();
+                string r_string = r[0].GetName();
                 for (int i = 1; i < r.Count(); i++)
-                    r_string += ", " + r[i].getName();
+                    r_string += ", " + r[i].GetName();
                 await ReplyAsync("More than 1 result found: " + r_string);
             }
             else
             {
                 IMessage m = await ReplyAsync("Processing...");
-                String ss = await r[0].getSimpleStats();
+                String ss = await r[0].GetSimpleStatsAsync();
                 await m.DeleteAsync();
                 EmbedBuilder eb = new EmbedBuilder();
-                eb.Title = r[0].getHeadStats();
+                eb.Title = r[0].GetHeadStats();
                 eb.Color = Utils.getRandomColor();
                 eb.Description = ss;
-                eb.ThumbnailUrl = r[0].getImageUrl();
+                eb.ThumbnailUrl = r[0].GetImageUrl();
                 eb.Footer = new EmbedFooterBuilder().WithText("[!] Warning: WoWS ship profile is broken (stock values everywhere)!");
                 await ReplyAsync("", false, eb);
             }
@@ -832,17 +830,17 @@ namespace Maya.Modules.Commands
         [Summary("Show all ships available")]
         public async Task Ships()
         {
-            if (Context.MainHandler.ShipHandler.isReady() == null)
+            if (Context.MainHandler.ShipHandler.IsReady() == null)
             {
                 await ReplyAsync("It wasn't possible to establish a connection to the ship database.");
                 return;
             }
-            if (!Context.MainHandler.ShipHandler.isReady().GetValueOrDefault())
+            if (!Context.MainHandler.ShipHandler.IsReady().GetValueOrDefault())
             {
                 await ReplyAsync("Loading ship database.");
                 return;
             }
-            await ReplyAsync($"Ship list: {String.Join(", ", Context.MainHandler.ShipHandler.getShipList())}");
+            await ReplyAsync($"Ship list: {String.Join(", ", Context.MainHandler.ShipHandler.GetShipList())}");
         }
 
         [Command("wtr")]
@@ -897,22 +895,23 @@ namespace Maya.Modules.Commands
             File.Delete($"Temp{Path.DirectorySeparatorChar}{account_id}.png");
         }
     }
-    
+
+    [Name("Music")]
     [MusicContext]
-    public class MusicCommands : ModuleCommand
+    public class MusicCommands : ModuleBase<MayaCommandContext>
     {
         [Command("play", RunMode = RunMode.Async)]
         [Summary("Request to add a song to the music queue")]
-        public async Task Play([Required("[search terms/video url/video id]"), Remainder] string search = null)
+        public async Task Play([Required("search terms/video url/video id"), Remainder] string search = null)
         {
             MusicContext context = new MusicContext(Context);
-            MusicResult mr = Context.MainHandler.GuildMusicHandler(Context.Guild).canUserAddToQueue(context, false);
+            MusicResult mr = Context.MainHandler.GuildMusicHandler(Context.Guild).CanUserAddToQueue(context, false);
             if(!mr.IsSuccessful)
             {
                 await ReplyAsync(mr.Error);
                 return;
             }
-            await Context.MainHandler.GuildMusicHandler(Context.Guild).Search(context, search);
+            await Context.MainHandler.GuildMusicHandler(Context.Guild).SearchAsync(context, search);
         }
 
         [Command("nowplaying")]
@@ -920,7 +919,7 @@ namespace Maya.Modules.Commands
         [Summary("Show the information about the current song")]
         public async Task Nowplaying()
         {
-            MusicContext current = Context.MainHandler.GuildMusicHandler(Context.Guild).getCurrentSong();
+            MusicContext current = Context.MainHandler.GuildMusicHandler(Context.Guild).GetCurrentSong();
             if (current == null)
                 await ReplyAsync("No song playing right now.");
             else
@@ -930,7 +929,7 @@ namespace Maya.Modules.Commands
                 eb.Color = Utils.getRandomColor();
                 eb.ThumbnailUrl = $"http://img.youtube.com/vi/{current.Song.VideoId}/mqdefault.jpg";
                 eb.Description = $"[**{current.Song.Title}**](https://www.youtube.com/watch?v={current.Song.VideoId})";
-                eb.Description += $"\n**Duration**: ``[{current.Song.timePlaying()}/{current.Song.Duration.GetValueOrDefault().ToString(@"mm\:ss")}]``";
+                eb.Description += $"\n**Duration**: ``[{current.Song.GetTimePlaying()}/{current.Song.Duration.GetValueOrDefault().ToString(@"mm\:ss")}]``";
                 if (current.AskedBy != null)
                     eb.Description += $"- **Requested by**: {current.AskedBy.Nickname ?? current.AskedBy.Username}";
                 await ReplyAsync("", false, eb);
@@ -943,18 +942,18 @@ namespace Maya.Modules.Commands
         {
             EmbedBuilder eb = new EmbedBuilder();
             eb.Color = Utils.getRandomColor();
-            MusicContext current = Context.MainHandler.GuildMusicHandler(Context.Guild).getCurrentSong();
+            MusicContext current = Context.MainHandler.GuildMusicHandler(Context.Guild).GetCurrentSong();
             if (current != null)
             {
                 eb.Title = "**Now playing**";
                 eb.ThumbnailUrl = $"http://img.youtube.com/vi/{current.Song.VideoId}/mqdefault.jpg";
                 eb.Description = $"[**{current.Song.Title}**](https://www.youtube.com/watch?v={current.Song.VideoId})";
-                eb.Description += $"\n**Duration**: ``[{current.Song.timePlaying()}/{current.Song.Duration.GetValueOrDefault().ToString(@"mm\:ss")}]``";
+                eb.Description += $"\n**Duration**: ``[{current.Song.GetTimePlaying()}/{current.Song.Duration.GetValueOrDefault().ToString(@"mm\:ss")}]``";
                 if (current.AskedBy != null)
                     eb.Description += $"- **Requested by**: {current.AskedBy.Nickname ?? current.AskedBy.Username}";
             }
             int n = 1;
-            var queue = Context.MainHandler.GuildMusicHandler(Context.Guild).getMusicQueue().getQueue();
+            var queue = Context.MainHandler.GuildMusicHandler(Context.Guild).GetMusicQueue().GetQueue();
             if (queue.Count != 0)
                 eb.AddField(efb =>
                 {
@@ -978,15 +977,20 @@ namespace Maya.Modules.Commands
         [Command("volume", RunMode = RunMode.Async)]
         [Summary("Change the volume from the bot")]
         [RequireAdmin]
-        public async Task Volume([Required("[volume(0-100)]")] int vol)
+        public async Task Volume(Nullable<int> volume = null)
         {
-            if (vol < 0 || vol > 100)
+            if(volume == null)
             {
-                await ReplyAsync("The volume needs to be between 0 and 100.");
+                await ReplyAsync($"Current volume: {Context.MainHandler.GuildMusicHandler(Context.Guild).GetVolume()}%.\nChange it with: {Context.MainHandler.GetCommandPrefix(Context.Channel)}volume [0-100]");
                 return;
             }
-            Context.MainHandler.GuildMusicHandler(Context.Guild).ChangeVolume(vol);
-            await ReplyAsync($"Changed volume to {vol}%...");
+            if (volume.Value < 0 || volume.Value > 100)
+            {
+                await ReplyAsync("The volume needs to be a number between 0 and 100.");
+                return;
+            }
+            Context.MainHandler.GuildMusicHandler(Context.Guild).ChangeVolume(volume.Value);
+            await ReplyAsync($"Changed volume to {volume.Value}%.");
         }
 
         [Command("skip", RunMode = RunMode.Async)]
@@ -1008,44 +1012,45 @@ namespace Maya.Modules.Commands
         }
     }
 
-    public class PlayerCommands : ModuleCommand
+    [Name("Player-specific")]
+    public class PlayerCommands : ModuleBase<MayaCommandContext>
     {
-        [Command("marie")]
+        [Command("marie_splatoon"), Alias("marie")]
         [Summary("Special command for marie_splatoon")]
         public async Task Marie()
         {
             await ReplyAsync("Did you mean: boobs?  /人◕‿‿◕人\\");
         }
 
-        [Command("khaenn"), Alias("khaen", "khaeen35")]
+        [Command("khaenn"), Alias("khaen", "khaenn35")]
         [Summary("Special command for Khaenn35")]
         public async Task Khaen()
         {
             await ReplyAsync("http://i.imgur.com/zLNEnPy.png");
         }
 
-        [Command("kt"), Alias("ktcraft", "serrith")]
+        [Command("ktcraft"), Alias("kt", "serrith")]
         [Summary("Special command for KTcraft")]
         public async Task Kt()
         {
             await ReplyAsync("http://i.imgur.com/UeJ0dqC.png");
         }
 
-        [Command("bb60"), Alias("battleship_60")]
+        [Command("battleship_60"), Alias("bb60")]
         [Summary("Special command for Battleship_60")]
         public async Task Bb60()
         {
             await ReplyAsync("* spams chat internally *");
         }
 
-        [Command("sparks"), Alias("nightmare_fluttershy")]
+        [Command("nightmare_fluttershy"), Alias("sparks")]
         [Summary("Special command for Nightmare_Fluttershy")]
         public async Task Sparks()
         {
             await ReplyAsync("http://i.imgur.com/fEM0XAm.png");
         }
 
-        [Command("flieger"), Alias("flieger56")]
+        [Command("flieger56"), Alias("flieger")]
         [Summary("Special command for Flieger56")]
         public async Task Flieger()
         {
@@ -1053,7 +1058,8 @@ namespace Maya.Modules.Commands
         }
     }
 
-    public class SimpleCommands : ModuleCommand
+    [Name("Simple")]
+    public class SimpleCommands : ModuleBase<MayaCommandContext>
     {
         [Command("hello"), Alias("hi", "hai")]
         [Summary("Says Hi")]
@@ -1097,6 +1103,12 @@ namespace Maya.Modules.Commands
             await ReplyAsync($"* hugs {Context.User.Mention} * (✿◠‿◠)");
         }
 
+        [Command("ping")]
+        public async Task Ping()
+        {
+            await ReplyAsync($"🏓 Pong! ``{(Context.Client as DiscordSocketClient).Latency}ms``");
+        }
+
         [Command("credits")]
         [Summary("Show the credits for creating the bot")]
         public async Task Credits()
@@ -1108,39 +1120,25 @@ namespace Maya.Modules.Commands
             eb.ThumbnailUrl = application.Owner.AvatarUrl;
             eb.Color = Maya.Utils.getRandomColor();
             eb.Description = $"Created by: {application.Owner.Mention}\n" +
-                             $"Suggestions? Tell him. :smile:";
+                             $"Suggestions? Tell him. 😄\n\n" +
+                              "Source: https://github.com/SubZero0/Maya";
             await ReplyAsync("", false, eb);
         }
     }
 
-    public class HelpCommand : ModuleCommand
+    [Name("Help")]
+    public class HelpCommand : ModuleBase<MayaCommandContext>
     {
-        [Command("help")] //TODO: Provavelmente reestruturar tudo para usar os sumários etc
+        [Command("help")]
         [Summary("Shows the help command")]
-        public async Task Help()
+        public async Task Help([Remainder] string command = null)
         {
-            string name = Context.MainHandler.Client.CurrentUser.Username;
-            if (Context.Channel is ITextChannel)
+            if (Context.Channel is ITextChannel && !Context.MainHandler.GuildPersonalityHandler(Context.Guild).IsReady())
             {
-                if (!Context.MainHandler.GuildPersonalityHandler(Context.Guild).isReady())
-                {
-                    await ReplyAsync("Loading...");
-                    return;
-                }
-                name = Context.MainHandler.GuildPersonalityHandler(Context.Guild).getName().ToLower();
+                await ReplyAsync("Loading...");
+                return;
             }
-            await ReplyAsync("```Simple: ?hello, ?wat, ?lewd, ?onigiri, ?hug, ?swearjar, ?credits\n" +
-                                "General: ?marry, ?mywtr, ?kill, ?meaning, ?tag, ?rate, ?8ball, ?joke, ?quote, ?title, ?image\n" +
-                                "WoWS: ?ships, ?ship, ?wtr\n" +
-                               $"Player-specific: ?{name}, ?marie, ?khaen, ?kt, ?bb60, ?sparks, ?flieger\n" +
-                                "Music commands: ?play, ?skip, ?stop, ?volume, ?np, ?queue```");
-        }
-
-        [Command("admin")] //TODO: Provavelmente reestruturar para encontrar automatico
-        [RequireAdmin]
-        public async Task Admin()
-        {
-            await ReplyAsync("```Commands: ?eval, ?ignore, ?unignore, ?reload, ?voice, ?変化の術, ?avatar, ?nickname, ?forcesave, ?personality, ?resetmusic```");
+            await Context.MainHandler.CommandHandler.ShowHelpCommand(Context, command);
         }
     }
 }

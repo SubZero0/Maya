@@ -1,14 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Discord;
+﻿using Discord;
 using Discord.Commands;
 using Maya.Controllers;
 
 namespace Maya.ModulesAddons
 {
-    public class ModuleCommand : ModuleBase<MayaCommandContext> { }
     public class MayaCommandContext : ICommandContext
     {
         public IDiscordClient Client { get; }

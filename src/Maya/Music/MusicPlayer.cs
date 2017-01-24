@@ -16,7 +16,7 @@ namespace Maya.Music
         public IAudioClient audioClient;
         private GuildHandler GuildHandler;
         private MusicHandler MusicHandler;
-        private MusicContext current_song;
+        private MusicContext currentSong;
         private Process mProcess;
         private float volume;
         public MusicPlayer(GuildHandler GuildHandler, MusicHandler MusicHandler)
@@ -24,35 +24,35 @@ namespace Maya.Music
             this.GuildHandler = GuildHandler;
             this.MusicHandler = MusicHandler;
             audioClient = null;
-            current_song = null;
+            currentSong = null;
             mProcess = null;
             volume = 1.0f;
         }
 
-        public async Task Run()
+        public async Task RunAsync()
         {
-            if (current_song != null)
+            if (currentSong != null)
                 return;
             await GuildHandler.MainHandler.Client.SetGameAsync(null);
-            MusicContext music = MusicHandler.getMusicQueue().getNextSong();
+            MusicContext music = MusicHandler.GetMusicQueue().GetNextSong();
             if (music == null)
                 return;
-            await MusicHandler.JoinVoiceChannel(await Utils.findVoiceChannel((music.AskedBy as Discord.IGuildUser).Guild as Discord.WebSocket.SocketGuild, GuildHandler.MainHandler.GuildConfigHandler(GuildHandler.Guild).getMusic().VoiceChannel));
-            current_song = music;
-            while (current_song.Song.Status == MusicStatus.DOWNLOADING) ;
-            if(current_song.Song.Status == MusicStatus.BROKEN)
+            //await MusicHandler.JoinVoiceChannel(await Utils.findVoiceChannel((music.AskedBy as Discord.IGuildUser).Guild as Discord.WebSocket.SocketGuild, GuildHandler.MainHandler.GuildConfigHandler(GuildHandler.Guild).getMusic().VoiceChannel));
+            currentSong = music;
+            while (currentSong.Song.Status == MusicStatus.DOWNLOADING) ;
+            if(currentSong.Song.Status == MusicStatus.BROKEN)
             {
-                current_song = null;
+                currentSong = null;
                 await music.Channel.SendMessageAsync($"Something went wrong when downloading **{music.Song.Title}**. Skipping...");
-                await Run();
+                await RunAsync();
                 return;
             }
-            await PlayAudio(music);
+            await PlayAudioAsync(music);
         }
 
-        public MusicContext getCurrentSong()
+        public MusicContext GetCurrentSong()
         {
-            return current_song;
+            return currentSong;
         }
 
         public void ChangeVolume(float f) //[0,1]
@@ -64,15 +64,20 @@ namespace Maya.Music
             volume = f;
         }
 
+        public float GetVolume() //[0,1]
+        {
+            return volume;
+        }
+
         public void Skip()
         {
             if (mProcess != null)
                 mProcess.Kill();
         }
 
-        public async Task PlayAudio(MusicContext m)
+        public async Task PlayAudioAsync(MusicContext m)
         {
-            current_song = m;
+            currentSong = m;
             string path = null;
             if (m.Song.Status == MusicStatus.NEW)
             {
@@ -110,6 +115,7 @@ namespace Maya.Music
                     RedirectStandardOutput = true,
                     RedirectStandardError = false
                 });
+                await Task.Delay(2000);
                 if (m.AskedBy != null)
                     await m.Channel.SendMessageAsync($"Hey {m.AskedBy.Mention}, your request of **{m.Song.Title}** will play now!");
                 await GuildHandler.MainHandler.Client.SetGameAsync(m.Song.Title);
@@ -118,7 +124,7 @@ namespace Maya.Music
                 {
                     if (mProcess.HasExited)
                         break;
-                    int blockSize = 3840;
+                    int blockSize = 2880;
                     byte[] buffer = new byte[blockSize];
                     int byteCount;
                     byteCount = await mProcess.StandardOutput.BaseStream.ReadAsync(buffer, 0, blockSize);
@@ -133,8 +139,8 @@ namespace Maya.Music
             if (File.Exists(path))
                 File.Delete(path);
             mProcess = null;
-            current_song = null;
-            await Run();
+            currentSong = null;
+            await RunAsync();
         }
 
         public byte[] ScaleVolumeSafeAllocateBuffers(byte[] audioSamples, float volume)

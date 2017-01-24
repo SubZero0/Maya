@@ -7,10 +7,10 @@ namespace Maya.WoWS
 {
     public interface IShip
     {
-        string getHeadStats();
-        Task<string> getSimpleStats();
-        Task updateData();
-        string getName();
-        string getImageUrl();
+        string GetHeadStats();
+        Task<string> GetSimpleStatsAsync();
+        Task UpdateDataAsync();
+        string GetName();
+        string GetImageUrl();
     }
 }
