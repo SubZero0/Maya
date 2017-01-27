@@ -134,5 +134,12 @@ namespace Maya
             Random r = new Random();
             return new Color((byte)r.Next(255), (byte)r.Next(255), (byte)r.Next(255));
         }
+        
+        //Auto Delete Message
+        public static async Task ADM(IUserMessage msg, int delay = 5000)
+        {
+            await Task.Delay(5000);
+            await msg.DeleteAsync();
+        }
     }
 }
