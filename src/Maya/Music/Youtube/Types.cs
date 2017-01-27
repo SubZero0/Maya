@@ -1,6 +1,6 @@
 ﻿/*
  * Code from Youtube Extractor
- * Credits to: Firefug
+ * Credits to: Flagbug
  * Link: https://github.com/flagbug/YoutubeExtractor
  */
 
