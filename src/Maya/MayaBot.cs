@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
@@ -6,6 +6,7 @@ using Discord.Commands;
 using Discord.Audio;
 using System.IO;
 using Maya.Controllers;
+using Maya.Roslyn;
 
 namespace Maya
 {
@@ -15,7 +16,7 @@ namespace Maya
         private MainHandler MainHandler;
 
         public async Task RunAsync()
-        {
+        { 
             if (!Directory.Exists("Temp"))
                 Directory.CreateDirectory("Temp");
             var files = Directory.GetFiles("Temp");
@@ -25,15 +26,14 @@ namespace Maya
             Discord = new DiscordSocketClient(new DiscordSocketConfig()
             {
                 AudioMode = AudioMode.Outgoing,
-                LogLevel = LogSeverity.Error,
+                LogLevel = LogSeverity.Info,
                 DownloadUsersOnGuildAvailable = true
             });
+            IConsole.TitleCard("Maya", DiscordConfig.Version);
 
-            Discord.Log += (message) =>
-            {
-                Console.WriteLine($"{message.ToString()}");
-                return Task.CompletedTask;
-            };
+            Discord.Log += (l)
+                => Task.Run(()
+                => IConsole.Log(l.Severity, l.Source, l.Exception?.ToString() ?? l.Message));
 
             var map = new DependencyMap();
             map.Add(Discord);
@@ -45,9 +45,9 @@ namespace Maya
 
             await Discord.LoginAsync(TokenType.Bot, MainHandler.ConfigHandler.GetBotToken());
             await Discord.ConnectAsync();
-            Console.WriteLine("Connected!");
 
-            await Discord.SetGameAsync(null);
+            IConsole.Log(LogSeverity.Info, "Game", "Input Game: ");
+            await Discord.SetGameAsync(Console.ReadLine());
 
             await MainHandler.InitializeLaterAsync();
 

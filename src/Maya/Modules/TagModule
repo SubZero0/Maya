@@ -1,0 +1,106 @@
+using System;
+using System.Threading.Tasks;
+using Discord;
+using Discord.Commands;
+using Maya.Attributes;
+using System.Text.RegularExpressions;
+using Maya.ModulesAddons;
+using Maya.GuildHandlers;
+
+namespace Maya.Modules
+{
+    [Group("tag")]
+    [Summary("Main command for creating, deleting, editing, and viewing tags")]
+    [RequireContext(ContextType.Guild)]
+    public class TagModule : ModuleBase<MayaCommandContext>
+    {
+        [Command]
+        [Summary("Show a tag")]
+        public async Task Tag([Required("tag/create/edit/delete"), Remainder] string tag = null)
+        {
+            if (!Context.MainHandler.GuildTagHandler(Context.Guild).ContainsTag(tag))
+            {
+                await ReplyAsync("Tag not found.");
+                return;
+            }
+            Tag _tag = Context.MainHandler.GuildTagHandler(Context.Guild).GetTag(tag);
+            EmbedBuilder eb = new EmbedBuilder();
+            IUser user = await Context.Client.GetUserAsync(_tag.creator);
+            eb.Title = $"Tag: {_tag.tag}";
+            eb.Color = Utils.getRandomColor();
+            eb.Footer = new EmbedFooterBuilder().WithText($"Created by: {user.Username}#{user.Discriminator}").WithIconUrl(user.AvatarUrl);
+            eb.Timestamp = _tag.when;
+            string text = "";
+            Match m;
+            if (Regex.Match(_tag.text, "(https?://)?((www.)?youtube.com|youtu.?be)/.+").Success)
+            {
+                eb = null;
+                text = _tag.text;
+            }
+            else if ((m = Regex.Match(_tag.text, "(http)?s?:?(//[^\"']*\\.(?:png|jpg|jpeg|gif|png|svg))")).Success)
+            {
+                eb.ImageUrl = m.Captures[0].Value;
+                eb.Description = _tag.text;
+            }
+            else
+                eb.Description = _tag.text;
+            await ReplyAsync(text, false, eb);
+        }
+
+        [Command("create")]
+        [Summary("Create a new tag")]
+        public async Task Create([Required] string tag = null, [Required, Remainder] string text = null)
+        {
+            if (Context.MainHandler.GuildTagHandler(Context.Guild).ContainsTag(tag) || tag.Equals("create", StringComparison.OrdinalIgnoreCase) || tag.Equals("delete", StringComparison.OrdinalIgnoreCase) || tag.Equals("edit", StringComparison.OrdinalIgnoreCase) || tag.Equals("info", StringComparison.OrdinalIgnoreCase) || tag.Equals("help", StringComparison.OrdinalIgnoreCase))
+            {
+                await ReplyAsync("This tag already exists.");
+                return;
+            }
+            if (text.Length > 1900)
+            {
+                await ReplyAsync("Text exceeds limit (> 1900).");
+                return;
+            }
+            Context.MainHandler.GuildTagHandler(Context.Guild).CreateTag(Context.User, tag, text);
+            await ReplyAsync($"Tag {tag} created!");
+        }
+
+        [Command("delete")]
+        [Summary("Delete an existing tag")]
+        public async Task Delete([Required] string tag = null)
+        {
+            if (!Context.MainHandler.GuildTagHandler(Context.Guild).ContainsTag(tag))
+            {
+                await ReplyAsync("Tag not found.");
+                return;
+            }
+            Tag _tag = Context.MainHandler.GuildTagHandler(Context.Guild).GetTag(tag);
+            if (!await Context.MainHandler.PermissionHandler.IsAdminAsync(Context.User) && _tag.creator != Context.User.Id)
+            {
+                await ReplyAsync("This tag isn't yours.");
+                return;
+            }
+            Context.MainHandler.GuildTagHandler(Context.Guild).RemoveTag(tag);
+            await ReplyAsync($"Tag {tag} deleted.");
+        }
+
+        [Command("edit")]
+        [Summary("Edit an existing tag")]
+        public async Task Edit([Required] string tag = null, [Required, Remainder] string text = null)
+        {
+            if (!Context.MainHandler.GuildTagHandler(Context.Guild).ContainsTag(tag))
+            {
+                await ReplyAsync("Tag not found.");
+                return;
+            }
+            Tag _tag = Context.MainHandler.GuildTagHandler(Context.Guild).GetTag(tag);
+            if (!await Context.MainHandler.PermissionHandler.IsAdminAsync(Context.User) && _tag.creator != Context.User.Id)
+            {
+                await ReplyAsync("This tag isn't yours.");
+                return;
+            }
+            Context.MainHandler.GuildTagHandler(Context.Guild).EditTag(tag, text);
+            await ReplyAsync($"Tag {tag} edited.");
+        }
+    }
+}
