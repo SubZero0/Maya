@@ -18,7 +18,7 @@ namespace Maya.Music.Youtube
             string js = HttpHelper.DownloadString(jsUrl);
 
             //Find "C" in this: var A = B.sig||C (B.s)
-            string functNamePattern = @"\.sig\s*\|\|([a-zA-Z0-9\$]+)\("; //Regex Formed To Find Word or DollarSign
+            string functNamePattern = @"\""signature"",\s?([a-zA-Z0-9\$]+)\("; //Regex Formed To Find Word or DollarSign
 
             var funcName = Regex.Match(js, functNamePattern).Groups[1].Value;
 

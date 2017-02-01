@@ -54,9 +54,9 @@ namespace Maya.GuildHandlers
             if (dt.Minute == 0 && (lastHour == null || (lastHour != null && lastHour.GetValueOrDefault() != dt.Hour)))
             {
                 lastHour = dt.Hour;
-                var ch = await Utils.FindTextChannel(GuildHandler.Guild as SocketGuild, GuildHandler.ConfigHandler.GetNotifications().TextChannel);
+                var ch = Utils.FindTextChannel(GuildHandler.Guild as SocketGuild, GuildHandler.ConfigHandler.GetNotifications().TextChannel);
                 if (ch != null)
-                    await Utils.SendMessageAsyncEx("PersonalityHourlyMessage", () => ch.SendMessageAsync((string)((JObject)personality["hourlyNotification"])[$"{lastHour = dt.Hour}"]));
+                    await GuildHandler.MainHandler.ExceptionHandler.SendMessageAsyncEx("PersonalityHourlyMessage", () => ch.SendMessageAsync((string)((JObject)personality["hourlyNotification"])[$"{lastHour = dt.Hour}"]));
             }
         }
 

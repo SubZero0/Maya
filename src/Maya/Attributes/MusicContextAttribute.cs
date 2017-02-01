@@ -27,7 +27,7 @@ namespace Maya.Attributes
             if (!mr.IsSuccessful)
                 return PreconditionResult.FromError(mr.Error);
             IVoiceChannel vc = con.MainHandler.GuildMusicHandler(con.Guild).GetVoiceChannel();
-            IVoiceChannel channel = await Utils.FindVoiceChannel(con.Guild as SocketGuild, con.MainHandler.GuildConfigHandler(con.Guild).GetMusic().VoiceChannel);
+            IVoiceChannel channel = Utils.FindVoiceChannel(con.Guild as SocketGuild, con.MainHandler.GuildConfigHandler(con.Guild).GetMusic().VoiceChannel);
             if (channel == null)
                 return PreconditionResult.FromError($"Missing voice channel ({con.MainHandler.GuildConfigHandler(con.Guild).GetMusic().VoiceChannel}).");
             else if (vc == null)

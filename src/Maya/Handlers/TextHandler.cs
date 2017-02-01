@@ -168,7 +168,7 @@ namespace Maya
                                 await msg.Channel.SendMessageAsync("Guild not found");
                                 return;
                             }
-                            ITextChannel t = await Utils.FindTextChannel(g, split[1]);
+                            ITextChannel t = Utils.FindTextChannel(g, split[1]);
                             if (t == null)
                             {
                                 await msg.Channel.SendMessageAsync("Text channel not found");

@@ -23,6 +23,7 @@ namespace Maya.Controllers
         public TextHandler TextHandler { get; private set; }
         public ShipHandler ShipHandler { get; private set; }
         public BotHandler BotHandler { get; private set; }
+        public ExceptionHandler ExceptionHandler { get; private set; }
 
         //Guild Handlers
         private Dictionary<ulong, GuildHandler> guilds;
@@ -40,6 +41,7 @@ namespace Maya.Controllers
             ShipHandler = new ShipHandler(this);
             BotHandler = new BotHandler();
             forumUpdater = new ForumUpdater(this);
+            ExceptionHandler = new ExceptionHandler(this);
         }
 
         internal async Task GuildAvailableEvent(SocketGuild guild)

@@ -181,35 +181,36 @@ namespace Maya.Modules.Commands
         [Summary("Show a joke")]
         public async Task Joke()
         {
-            IMessage m = await ReplyAsync("Processing...");
-            using (var httpClient = new HttpClient())
+            using (var typing = Context.Channel.EnterTypingState())
             {
-                int isImg = new Random().Next(2);
-                string link = $"http://www.amazingjokes.com/{(isImg == 1 ? "image" : "jokes")}/random";
-                var res = await httpClient.GetAsync(link);
-                if (!res.IsSuccessStatusCode)
+                using (var httpClient = new HttpClient())
                 {
-                    await m.DeleteAsync();
-                    await ReplyAsync($"An error occurred: {res.ReasonPhrase}");
-                    return;
+                    int isImg = new Random().Next(2);
+                    string link = $"http://www.amazingjokes.com/{(isImg == 1 ? "image" : "jokes")}/random";
+                    var res = await httpClient.GetAsync(link);
+                    if (!res.IsSuccessStatusCode)
+                    {
+                        await ReplyAsync($"An error occurred: {res.ReasonPhrase}");
+                        typing.Dispose();
+                        return;
+                    }
+                    string html = await res.Content.ReadAsStringAsync();
+                    EmbedBuilder eb = new EmbedBuilder();
+                    if (isImg == 1)
+                    {
+                        string[] ps = html.Split(new string[] { "]\">" }, StringSplitOptions.None)[1].Split(new string[] { "</h1>" }, StringSplitOptions.None);
+                        eb.Author = new EmbedAuthorBuilder().WithName($"**{ps[0]}**");
+                        eb.ImageUrl = ps[1].Split(new string[] { "<img src=\"" }, StringSplitOptions.None)[1].Split('"')[0];
+                    }
+                    else
+                    {
+                        string[] ps = html.Split(new string[] { "<div class=\"thumbnail\">" }, StringSplitOptions.None)[1].Split(new string[] { "\">" }, StringSplitOptions.None)[1].Split(new string[] { "</h1>" }, StringSplitOptions.None);
+                        eb.Author = new EmbedAuthorBuilder().WithName($"**{ps[0]}**");
+                        eb.Description = Utils.StripTags(WebUtility.HtmlDecode(ps[1].Split(new string[] { " </div>" }, StringSplitOptions.None)[0].Trim()));
+                    }
+                    await ReplyAsync("", false, eb);
                 }
-                string html = await res.Content.ReadAsStringAsync();
-                EmbedBuilder eb = new EmbedBuilder();
-                if (isImg == 1)
-                {
-                    string[] ps = html.Split(new string[] { "]\">" }, StringSplitOptions.None)[1].Split(new string[] { "</h1>" }, StringSplitOptions.None);
-                    eb.Author = new EmbedAuthorBuilder().WithName($"**{ps[0]}**");
-                    eb.ImageUrl = ps[1].Split(new string[] { "<img src=\"" }, StringSplitOptions.None)[1].Split('"')[0];
-                }
-                else
-                {
-                    string[] ps = html.Split(new string[] { "<div class=\"thumbnail\">" }, StringSplitOptions.None)[1].Split(new string[] { "\">" }, StringSplitOptions.None)[1].Split(new string[] { "</h1>" }, StringSplitOptions.None);
-                    eb.Author = new EmbedAuthorBuilder().WithName($"**{ps[0]}**");
-                    eb.Description = Utils.StripTags(WebUtility.HtmlDecode(ps[1].Split(new string[] { " </div>" }, StringSplitOptions.None)[0].Trim()));
-                }
-                await ReplyAsync("", false, eb);
             }
-            await m.DeleteAsync();
         }
 
         [Command("8ball")]
@@ -812,16 +813,17 @@ namespace Maya.Modules.Commands
             }
             else
             {
-                IMessage m = await ReplyAsync("Processing...");
-                String ss = await r[0].GetSimpleStatsAsync();
-                await m.DeleteAsync();
-                EmbedBuilder eb = new EmbedBuilder();
-                eb.Title = r[0].GetHeadStats();
-                eb.Color = Utils.getRandomColor();
-                eb.Description = ss;
-                eb.ThumbnailUrl = r[0].GetImageUrl();
-                eb.Footer = new EmbedFooterBuilder().WithText("[!] Warning: WoWS ship profile is broken (stock values everywhere)!");
-                await ReplyAsync("", false, eb);
+                using (Context.Channel.EnterTypingState())
+                {
+                    String ss = await r[0].GetSimpleStatsAsync();
+                    EmbedBuilder eb = new EmbedBuilder();
+                    eb.Title = r[0].GetHeadStats();
+                    eb.Color = Utils.getRandomColor();
+                    eb.Description = ss;
+                    eb.ThumbnailUrl = r[0].GetImageUrl();
+                    eb.Footer = new EmbedFooterBuilder().WithText("[!] Warning: WoWS ship profile is broken (stock values everywhere)!");
+                    await ReplyAsync("", false, eb);
+                }
             }
             return;
         }
@@ -852,47 +854,48 @@ namespace Maya.Modules.Commands
                 await ReplyAsync("Invalid username.");
                 return;
             }
-            IMessage m = await ReplyAsync("Processing...");
-            string account_id = null;
-            using (var httpClient = new HttpClient())
+            using (var typing = Context.Channel.EnterTypingState())
             {
-                var jsonraw = await httpClient.GetStringAsync($"https://api.worldofwarships.com/wows/account/list/?application_id=ca60f30d0b1f91b195a521d4aa618eee&type=startswith&limit=1&search={username}");
-                JObject json = JObject.Parse(jsonraw);
-                if ((String)json["status"] != "ok")
+                string account_id = null;
+                using (var httpClient = new HttpClient())
                 {
-                    await m.DeleteAsync();
-                    await ReplyAsync("Something went wrong with the WoWS API.");
+                    var jsonraw = await httpClient.GetStringAsync($"https://api.worldofwarships.com/wows/account/list/?application_id=ca60f30d0b1f91b195a521d4aa618eee&type=startswith&limit=1&search={username}");
+                    JObject json = JObject.Parse(jsonraw);
+                    if ((String)json["status"] != "ok")
+                    {
+                        await ReplyAsync("Something went wrong with the WoWS API.");
+                        typing.Dispose();
+                        return;
+                    }
+                    JArray data = (JArray)json["data"];
+                    if (data.Count() == 0)
+                    {
+                        await ReplyAsync("No results found.");
+                        typing.Dispose();
+                        return;
+                    }
+                    JObject result = (JObject)data[0];
+                    account_id = (String)result["account_id"];
+                }
+                try
+                {
+                    using (var image = new HttpClient())
+                    {
+                        string link = $"http://na.warshipstoday.com/signature/{account_id}/light.png"; //TODO: Download and upload at the same time?
+                        File.WriteAllBytes($"Temp{Path.DirectorySeparatorChar}{account_id}.png", await image.GetByteArrayAsync(link));
+                    }
+                }
+                catch (Exception)
+                {
+                    await ReplyAsync("Something went wrong while downloading the image.");
+                    typing.Dispose();
                     return;
                 }
-                JArray data = (JArray)json["data"];
-                if (data.Count() == 0)
-                {
-                    await m.DeleteAsync();
-                    await ReplyAsync("No results found.");
-                    return;
-                }
-                JObject result = (JObject)data[0];
-                account_id = (String)result["account_id"];
+                await Task.Delay(500);
+                await Context.Channel.SendFileAsync($"Temp{Path.DirectorySeparatorChar}{account_id}.png");
+                await Task.Delay(500);
+                File.Delete($"Temp{Path.DirectorySeparatorChar}{account_id}.png");
             }
-            try
-            {
-                using (var image = new HttpClient())
-                {
-                    string link = $"http://na.warshipstoday.com/signature/{account_id}/light.png";
-                    File.WriteAllBytes($"Temp{Path.DirectorySeparatorChar}{account_id}.png", await image.GetByteArrayAsync(link));
-                }
-            }
-            catch (Exception)
-            {
-                await m.DeleteAsync();
-                await ReplyAsync("Something went wrong while downloading the image.");
-                return;
-            }
-            await Task.Delay(500);
-            await m.DeleteAsync();
-            await Context.Channel.SendFileAsync($"Temp{Path.DirectorySeparatorChar}{account_id}.png");
-            await Task.Delay(500);
-            File.Delete($"Temp{Path.DirectorySeparatorChar}{account_id}.png");
         }
     }
 

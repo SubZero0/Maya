@@ -34,69 +34,76 @@ namespace Maya.Modules.Functions
 
         public async void UpdateTime(object state)
         {
-            string html;
-            using (var httpClient = new HttpClient())
+            try
             {
-                string link = "http://forum.worldofwarships.com/";
-                var res = await httpClient.GetAsync(link);
-                if (!res.IsSuccessStatusCode)
-                    return;
-                html = await res.Content.ReadAsStringAsync();
-            }
-            html = html.Split(new string[] { "<h3>WG staff posts</h3>" }, StringSplitOptions.RemoveEmptyEntries)[1];
-            string[] divs = html.Split(new string[] { "<div class='left'>" }, StringSplitOptions.RemoveEmptyEntries);
-            List<EmbedBuilder> list = new List<EmbedBuilder>();
-            if (wgstaffLastUrl != null)
-            {
-                for (int i = 1; i < 11; i++)
+                string html;
+                using (var httpClient = new HttpClient())
                 {
-                    EmbedBuilder now = await HtmlToEmbedBuilderAsync("WG staff posts", divs[i]);
-                    if (wgstaffLastUrl.Equals(now.Url))
-                        break;
-                    else
-                        list.Add(now);
+                    string link = "http://forum.worldofwarships.com/";
+                    var res = await httpClient.GetAsync(link);
+                    if (!res.IsSuccessStatusCode)
+                        return;
+                    html = await res.Content.ReadAsStringAsync();
                 }
-                if (list.Count() != 0)
+                html = html.Split(new string[] { "<h3>WG staff posts</h3>" }, StringSplitOptions.RemoveEmptyEntries)[1];
+                string[] divs = html.Split(new string[] { "<div class='left'>" }, StringSplitOptions.RemoveEmptyEntries);
+                List<EmbedBuilder> list = new List<EmbedBuilder>();
+                if (wgstaffLastUrl != null)
                 {
-                    wgstaffLastUrl = list.First().Url;
-                    if (list.Count() == 10)
-                        list.Clear();
-                }
-            }
-            else
-                wgstaffLastUrl = (await HtmlToEmbedBuilderAsync("WG staff posts", divs[1])).Url;
-            if (recentLastUrl != null)
-            {
-                int c = list.Count();
-                for (int i = 11; i < 21; i++)
-                {
-                    EmbedBuilder now = await HtmlToEmbedBuilderAsync("Recent Topics", divs[i]);
-                    if (recentLastUrl.Equals(now.Url))
-                        break;
-                    else
-                        list.Add(now);
-                }
-                if (list.Count() != c)
-                {
-                    recentLastUrl = list.ElementAt(c).Url;
-                    if (list.Count() == c + 10)
-                        list.RemoveRange(c, list.Count() - c);
-                }
-            }
-            else
-                recentLastUrl = (await HtmlToEmbedBuilderAsync("Recent Topics", divs[11])).Url;
-            if (list.Count != 0)
-                foreach (SocketGuild guild in MainHandler.Client.Guilds)
-                {
-                    var w = MainHandler.GuildConfigHandler(guild).GetForumUpdates();
-                    if (w.IsEnabled)
+                    for (int i = 1; i < 11; i++)
                     {
-                        ITextChannel tc = await Utils.FindTextChannel(guild, w.TextChannel);
-                        if (tc != null)
-                            for (int i = list.Count - 1; i >= 0; i--)
-                                await Utils.SendMessageAsyncEx("ForumUpdaterMessage", () => tc.SendMessageAsync("", false, list.ElementAt(i)));
+                        EmbedBuilder now = await HtmlToEmbedBuilderAsync("WG staff posts", divs[i]);
+                        if (wgstaffLastUrl.Equals(now.Url))
+                            break;
+                        else
+                            list.Add(now);
+                    }
+                    if (list.Count() != 0)
+                    {
+                        wgstaffLastUrl = list.First().Url;
+                        if (list.Count() == 10)
+                            list.Clear();
                     }
                 }
+                else
+                    wgstaffLastUrl = (await HtmlToEmbedBuilderAsync("WG staff posts", divs[1])).Url;
+                if (recentLastUrl != null)
+                {
+                    int c = list.Count();
+                    for (int i = 11; i < 21; i++)
+                    {
+                        EmbedBuilder now = await HtmlToEmbedBuilderAsync("Recent Topics", divs[i]);
+                        if (recentLastUrl.Equals(now.Url))
+                            break;
+                        else
+                            list.Add(now);
+                    }
+                    if (list.Count() != c)
+                    {
+                        recentLastUrl = list.ElementAt(c).Url;
+                        if (list.Count() == c + 10)
+                            list.RemoveRange(c, list.Count() - c);
+                    }
+                }
+                else
+                    recentLastUrl = (await HtmlToEmbedBuilderAsync("Recent Topics", divs[11])).Url;
+                if (list.Count != 0)
+                    foreach (SocketGuild guild in MainHandler.Client.Guilds)
+                    {
+                        var w = MainHandler.GuildConfigHandler(guild).GetForumUpdates();
+                        if (w.IsEnabled)
+                        {
+                            ITextChannel tc = Utils.FindTextChannel(guild, w.TextChannel);
+                            if (tc != null)
+                                for (int i = list.Count - 1; i >= 0; i--)
+                                    await MainHandler.ExceptionHandler.SendMessageAsyncEx("ForumUpdaterMessage", () => tc.SendMessageAsync("", false, list.ElementAt(i)));
+                        }
+                    }
+            }
+            catch(Exception e)
+            {
+                await MainHandler.ExceptionHandler.WriteException(e);
+            }
         }
 
         private async Task<EmbedBuilder> HtmlToEmbedBuilderAsync(string place, string str)
@@ -167,7 +174,7 @@ namespace Maya.Modules.Functions
             }
             catch(Exception e)
             {
-                Console.WriteLine($"EXCEPTION forumUpdates!\n{e.ToString()}");
+                await MainHandler.ExceptionHandler.WriteException(e);
                 return "";
             }
         }

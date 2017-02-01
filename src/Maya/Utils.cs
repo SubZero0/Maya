@@ -2,30 +2,12 @@
 using Discord.WebSocket;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace Maya
 {
     public class Utils
     {
-        public static async Task SendMessageAsyncEx(string name, Func<Task<IUserMessage>> message)
-        {
-            if (message != null)
-            {
-                try
-                {
-                    await message.Invoke();
-                }
-                catch (Exception e)
-                {
-                    File.AppendAllText("exceptions.txt", $"Exception at {name}\n{e.ToString()}\n\n\n");
-                    Console.WriteLine($">>EXCEPTION<< Exception at {name}!");
-                }
-            }
-        }
-
         public static bool IsChannelListed(IChannel channel, List<string> list, bool allow_others = true)
         {
             if (!(channel is ITextChannel))
@@ -35,28 +17,20 @@ namespace Maya
             return list.Contains(channel.Name);
         }
 
-        public async static Task<IVoiceChannel> FindVoiceChannel(SocketGuild guild, string voice_channel)
+        public static IVoiceChannel FindVoiceChannel(SocketGuild guild, string voice_channel)
         {
-            var cs = await guild.GetVoiceChannelsAsync();
-            IVoiceChannel r = cs.FirstOrDefault(x => x.Name == voice_channel);
+            IVoiceChannel r = guild.VoiceChannels.FirstOrDefault(x => x.Name == voice_channel);
             if (r != null)
                 return r;
-            foreach (IVoiceChannel c in cs)
-                if (c.Name.IndexOf(voice_channel, StringComparison.OrdinalIgnoreCase) != -1)
-                    return c;
-            return null;
+            return guild.VoiceChannels.FirstOrDefault(x => (x.Name.IndexOf(voice_channel, StringComparison.OrdinalIgnoreCase)) != -1);
         }
 
-        public async static Task<ITextChannel> FindTextChannel(SocketGuild guild, string text_channel)
+        public static ITextChannel FindTextChannel(SocketGuild guild, string text_channel)
         {
-            var cs = await guild.GetTextChannelsAsync();
-            ITextChannel r = cs.FirstOrDefault(x => x.Name == text_channel);
+            ITextChannel r = guild.TextChannels.FirstOrDefault(x => x.Name == text_channel);
             if (r != null)
                 return r;
-            foreach (ITextChannel c in cs)
-                if (c.Name.IndexOf(text_channel, StringComparison.OrdinalIgnoreCase) != -1)
-                    return c;
-            return null;
+            return guild.TextChannels.FirstOrDefault(x => (x.Name.IndexOf(text_channel, StringComparison.OrdinalIgnoreCase)) != -1);
         }
 
         public static SocketGuild FindGuild(DiscordSocketClient discord, string guild_name)

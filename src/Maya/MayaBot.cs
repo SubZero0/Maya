@@ -26,7 +26,7 @@ namespace Maya
             {
                 AudioMode = AudioMode.Outgoing,
                 LogLevel = LogSeverity.Error,
-                DownloadUsersOnGuildAvailable = true
+                AlwaysDownloadUsers = true
             });
 
             Discord.Log += (message) =>
