@@ -12,14 +12,14 @@ namespace Maya.WoWS
     {
         private MainHandler MainHandler;
         private JObject ship;
-        //private JObject ship_max;
-        //private string search;
+        private JObject ship_max;
+        private List<JObject> cv;
         public AirCarrier(MainHandler MainHandler, JObject o)
         {
             this.MainHandler = MainHandler;
             ship = o;
-            //ship_max = null;
-            //search = "";
+            ship_max = null;
+            cv = null;
         }
 
         public string GetName()
@@ -34,7 +34,35 @@ namespace Maya.WoWS
 
         public async Task UpdateDataAsync()
         {
-            await Task.Delay(0);
+            string search = "&ship_id=" + ship["ship_id"];
+            Dictionary<string, JObject> best_modules = new Dictionary<string, JObject>();
+            List<string> cv_modules = new List<string>();
+            JObject modules_tree = (JObject)ship["modules_tree"];
+            foreach (JObject o in modules_tree.Values())
+                if (!(bool)o["is_default"] && (string)o["type"] != "Torpedoes")
+                {
+                    string type = (string)o["type"];
+                    if (type == "FlightControl" || type == "Fighter" || type == "DiveBomber" || type == "TorpedoBomber")
+                        cv_modules.Add((string)o["module_id"]);
+                    else
+                    {
+                        if (!best_modules.ContainsKey(type))
+                            best_modules[type] = o;
+                        else if ((int)o["price_xp"] > (int)(best_modules[type])["price_xp"])
+                            best_modules[type] = o;
+                    }
+                }
+            foreach (string s in best_modules.Keys)
+            {
+                string str = (string)(best_modules[s])["module_id"];
+                switch (s)
+                {
+                    case "Hull": { search += $"&hull_id={str}"; break; }
+                    case "Engine": { search += $"&engine_id={str}"; break; }
+                }
+            }
+            ship_max = await MainHandler.ShipHandler.GetMaxShipAsync(search);
+            cv = await MainHandler.ShipHandler.GetCVAsync(cv_modules);
         }
 
         public string GetHeadStats()
@@ -42,9 +70,76 @@ namespace Maya.WoWS
             return MainHandler.ShipHandler.ShipNation((String)ship["nation"]) + " " + MainHandler.ShipHandler.ShipType((String)ship["type"]) + " " + ship["name"] + " (Tier " + MainHandler.ShipHandler.ShipTier((int)ship["tier"]) + ")";
         }
 
-        public Task<string> GetSimpleStatsAsync()
+        public async Task<string> GetSimpleStatsAsync()
         {
-            return Task.FromResult<string>("RIP CVs");
+            if (ship_max == null || cv == null)
+            {
+                await UpdateDataAsync();
+                if (ship_max == null)
+                    return "A problem occurred while getting the max stats from this ship.";
+                if (cv == null)
+                    return "A problem occurred while getting the cv stats.";
+            }
+            JObject armour = (JObject)ship_max["armour"];
+            JObject mobility = (JObject)ship_max["mobility"];
+            JObject concealment = (JObject)ship_max["concealment"];
+            string simple = "";
+            simple += "HP: " + ((JObject)ship_max["hull"])["health"] + "\n";
+            simple += "Planes: " + ((JObject)ship_max["hull"])["planes_amount"] + "\n";
+            if ((String)armour["flood_prob"] != "0")
+                simple += "Torpedo protection (flooding): " + armour["flood_prob"] + "%\n";
+            if ((String)armour["flood_damage"] != "0")
+                simple += "Torpedo protection (damage): " + armour["flood_damage"] + "%\n";
+
+            simple += "**Flight control** (F/TB/DB):\n";
+            JObject flight_control = (JObject)ship_max["flight_control"];
+            simple += $"- {flight_control["fighter_squadrons"]}/{flight_control["torpedo_squadrons"]}/{flight_control["bomber_squadrons"]}\n";
+            foreach (JObject module in cv.Where(x => (string)x["type"] == "FlightControl"))
+            {
+                flight_control = (JObject)module["profile"]["flight_control"];
+                simple += $"- {flight_control["fighter_squadrons"]}/{flight_control["torpedo_squadrons"]}/{flight_control["bomber_squadrons"]}\n";
+            }
+            if (ship_max["fighters"] != null)
+            {
+                simple += "**Fighter**:\n";
+                JObject fighters = (JObject)ship_max["fighters"];
+                simple += $"- {fighters["name"]}: [Dmg: {fighters["avg_damage"]}, HP: {fighters["max_health"]}, Speed: {fighters["cruise_speed"]}, Ammo: {fighters["max_ammo"]}]\n";
+                foreach (JObject module in cv.Where(x => (string)x["type"] == "Fighter"))
+                {
+                    fighters = (JObject)module["profile"]["fighter"];
+                    simple += $"- {module["name"]}: [Dmg: {fighters["avg_damage"]}, HP: {fighters["max_health"]}, Speed: {fighters["cruise_speed"]}, Ammo: {fighters["max_ammo"]}]\n";
+                }
+            }
+            if (ship_max["dive_bomber"] != null)
+            {
+                simple += "**Dive bomber**:\n";
+                JObject dbs = (JObject)ship_max["dive_bomber"];
+                simple += $"- {dbs["name"]}: [Dmg: {dbs["max_damage"]}, HP: {dbs["max_health"]}, Speed: {dbs["cruise_speed"]}]\n";
+                foreach (JObject module in cv.Where(x => (string)x["type"] == "DiveBomber"))
+                {
+                    dbs = (JObject)module["profile"]["dive_bomber"];
+                    simple += $"- {module["name"]}: [Dmg: {dbs["max_damage"]}, HP: {dbs["max_health"]}, Speed: {dbs["cruise_speed"]}]\n";
+                }
+            }
+            if (ship_max["torpedo_bomber"] != null)
+            {
+                simple += "**Torpedo bomber**:\n";
+                JObject tbs = (JObject)ship_max["torpedo_bomber"];
+                simple += $"- {tbs["name"]}: [Dmg: {tbs["max_damage"]}, HP: {tbs["max_health"]}, Speed: {tbs["cruise_speed"]}, TorpSpeed: {tbs["torpedo_max_speed"]} kts]\n";
+                foreach (JObject module in cv.Where(x => (string)x["type"] == "TorpedoBomber"))
+                {
+                    tbs = (JObject)module["profile"]["torpedo_bomber"];
+                    simple += $"- {module["name"]}: [Dmg: {tbs["max_damage"]}, HP: {tbs["max_health"]}, Speed: {tbs["cruise_speed"]}, TorpSpeed: {tbs["torpedo_max_speed"]} kts]\n";
+                }
+            }
+            simple += "**Mobility**:\n";
+            simple += "- Speed: " + mobility["max_speed"] + " kts\n";
+            simple += "- Rudder shift time: " + mobility["rudder_time"] + "s\n";
+            simple += "- Turning radius: " + mobility["turning_radius"] + "m\n";
+            simple += "**Concealment**:\n";
+            simple += "- By ship: " + concealment["detect_distance_by_ship"] + "km\n";
+            simple += "- By plane: " + concealment["detect_distance_by_plane"] + "km";
+            return simple;
         }
     }
 }

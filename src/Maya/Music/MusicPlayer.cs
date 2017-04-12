@@ -102,7 +102,7 @@ namespace Maya.Music
             }
             else
                 goto End;
-            using (var stream = audioClient.CreatePCMStream(2880))
+            using (var stream = audioClient.CreatePCMStream(AudioApplication.Music))
             {
                 mProcess = Process.Start(new ProcessStartInfo
                 {

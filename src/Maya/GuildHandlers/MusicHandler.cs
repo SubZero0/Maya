@@ -35,7 +35,7 @@ namespace Maya.GuildHandlers
             {
                 Stop();
                 if (player?.audioClient != null)
-                    await player.audioClient.DisconnectAsync();
+                    await player.audioClient.StopAsync();
             }
             catch { }
         }
@@ -105,7 +105,7 @@ namespace Maya.GuildHandlers
             if (channel == null)
                 return;
             if (player.audioClient != null)
-                await player.audioClient.DisconnectAsync();
+                await player.audioClient.StopAsync();
             voiceChannel = channel;
             player.audioClient = await channel.ConnectAsync();
         }

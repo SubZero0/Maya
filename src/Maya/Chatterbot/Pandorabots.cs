@@ -44,7 +44,7 @@ namespace Maya.Chatterbot
         {
             vars["input"] = thought.Text;
 
-            var response = await ChatterBotUtils.PostAsync("http://www.pandorabots.com/pandora/talk-xml", vars, null);
+            var response = await ChatterBotUtils.PostAsync("https://www.pandorabots.com/pandora/talk-xml", vars, null);
 
             var responseThought = new ChatterBotThought();
             responseThought.Text = ChatterBotUtils.XPathSearch(response, "//result/that/text()");

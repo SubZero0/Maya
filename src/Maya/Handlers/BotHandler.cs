@@ -29,7 +29,7 @@ namespace Maya.Handlers
             await session.Initialize();
             ready = true;
         }
-
+        
         public Task Close()
         {
             return Task.CompletedTask;

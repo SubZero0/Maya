@@ -10,6 +10,7 @@ using Discord;
 using Maya.ModulesAddons;
 using Maya.TypeReaders;
 using Maya.Attributes;
+using Maya.Interfaces;
 
 namespace Maya
 {
@@ -25,7 +26,6 @@ namespace Maya
             this.MainHandler = MainHandler;
             client = _map.Get<DiscordSocketClient>();
             commands = new CommandService();
-            _map.Add(commands);
             map = _map;
 
             commands.AddTypeReader<Nullable<int>>(new NullableTypeReader<int>(int.TryParse));
@@ -44,6 +44,7 @@ namespace Maya
         {
             var msg = parameterMessage as SocketUserMessage;
             if (msg == null) return Task.CompletedTask;
+            if (msg.Author.IsBot) return Task.CompletedTask;
             if (msg.Channel is ITextChannel && !MainHandler.GuildConfigHandler((msg.Channel as ITextChannel).Guild).IsChannelAllowed(msg.Channel)) return Task.CompletedTask;
             if (msg.Channel is ITextChannel && MainHandler.GuildIgnoreHandler((msg.Channel as ITextChannel).Guild).Contains(msg.Author.Id)) return Task.CompletedTask;
             int argPos = 0;
@@ -73,7 +74,7 @@ namespace Maya
                         if (mi.Name != "Help")
                         {
                             bool ok = true;
-                            foreach (PreconditionAttribute precondition in mi.Preconditions)
+                            foreach (PreconditionAttribute precondition in mi.Preconditions.Where(x => !(x is Ignore)))
                                 if (!(await precondition.CheckPermissions(context, null, map)).IsSuccess)
                                 {
                                     ok = false;
@@ -86,7 +87,7 @@ namespace Maya
                                 for (int i = cmds.Count - 1; i >= 0; i--)
                                 {
                                     object o = cmds[i];
-                                    foreach (PreconditionAttribute precondition in ((o as CommandInfo)?.Preconditions ?? (o as ModuleInfo)?.Preconditions))
+                                    foreach (PreconditionAttribute precondition in ((o as CommandInfo)?.Preconditions.Where(x => !(x is Ignore)) ?? (o as ModuleInfo)?.Preconditions.Where(x => !(x is Ignore))))
                                         if (!(await precondition.CheckPermissions(context, o as CommandInfo, map)).IsSuccess)
                                             cmds.Remove(o);
                                 }
@@ -122,12 +123,13 @@ namespace Maya
                             command = command.Substring(0, lastIndex);
                         }
                     }
-                    if (cmd != null && (await cmd.Value.CheckPreconditionsAsync(context, map)).IsSuccess)
+                    if (cmd != null && await CheckPreconditionsAsync(cmd.Value, context, map))
                     {
                         eb.Author.Name = $"Help: {cmd.Value.Command.Aliases.First()}";
                         eb.Description = $"Usage: {MainHandler.GetCommandPrefix(context.Channel)}{cmd.Value.Command.Aliases.First()}";
-                        if (cmd.Value.Command.Parameters.Count != 0)
-                            eb.Description += $" [{String.Join("] [", cmd.Value.Command.Parameters.Select(x => IsRequiredParameter(x) ?? x.Name))}]";
+                        var parameters = cmd.Value.Command.Parameters.Where(x => !(x is Ignore));
+                        if (parameters.Count() != 0)
+                            eb.Description += $" [{String.Join("] [", parameters.Select(x => IsRequiredParameter(x) ?? x.Name))}]";
                         if (!String.IsNullOrEmpty(cmd.Value.Command.Summary))
                             eb.Description += $"\nSummary: {cmd.Value.Command.Summary}";
                         if (!String.IsNullOrEmpty(cmd.Value.Command.Remarks))
@@ -157,6 +159,14 @@ namespace Maya
         {
             RequiredAttribute get = pi.Preconditions.FirstOrDefault(x => x is RequiredAttribute) as RequiredAttribute;
             return get?.Text;
+        }
+
+        private async Task<bool> CheckPreconditionsAsync(CommandMatch cmd, ICommandContext context, IDependencyMap map)
+        {
+            foreach (PreconditionAttribute p in cmd.Command.Preconditions.Where(x => !(x is Ignore)))
+                if (!(await p.CheckPermissions(context, cmd.Command, map)).IsSuccess)
+                    return false;
+            return true;
         }
     }
 }

@@ -134,6 +134,12 @@ namespace Maya.WoWS
             }
         }
 
+        public void ClearCache()
+        {
+            torpedoesCache.Clear();
+            cvCache.Clear();
+        }
+
         public async Task<JObject> GetMaxShipAsync(string search)
         {
             using (var httpClient = new HttpClient())
@@ -147,7 +153,7 @@ namespace Maya.WoWS
             }
         }
 
-        public Dictionary<string, JObject> torpedoesCache = new Dictionary<string, JObject>();
+        private Dictionary<string, JObject> torpedoesCache = new Dictionary<string, JObject>();
         public async Task<JObject> GetTorpedoesAsync(string search, string torpedoes_id)
         {
             search += "&torpedoes_id=" + torpedoes_id;
@@ -166,6 +172,41 @@ namespace Maya.WoWS
                 }
                 return null;
             }
+        }
+
+        private Dictionary<string, JObject> cvCache = new Dictionary<string, JObject>();
+        public async Task<List<JObject>> GetCVAsync(List<string> modules_id)
+        {
+            List<JObject> list = new List<JObject>();
+            if (modules_id.Count == 0)
+                return list;
+            foreach(string m in modules_id)
+            {
+                if (cvCache.ContainsKey(m))
+                    list.Add(cvCache[m]);
+                else
+                {
+                    list.Clear();
+                    break;
+                }
+            }
+            if (list.Count != 0)
+                return list;
+            using (var httpClient = new HttpClient())
+            {
+                string link = $"https://api.worldofwarships.com/wows/encyclopedia/modules/?application_id=ca60f30d0b1f91b195a521d4aa618eee&module_id={string.Join(",", modules_id)}";
+                var jsonraw = await httpClient.GetStringAsync(link);
+                JObject json = JObject.Parse(jsonraw);
+                if ((String)json["status"] == "ok")
+                {
+                    foreach(JObject modulo in ((JObject)json["data"]).Values())
+                    {
+                        cvCache.Add((string)modulo["module_id"], modulo);
+                        list.Add(modulo);
+                    }
+                }
+            }
+            return list;
         }
     }
 }

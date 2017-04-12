@@ -20,7 +20,6 @@ using Microsoft.CodeAnalysis;
 using System.Reflection;
 using Maya.Roslyn;
 using Maya.WoWS;
-using Maya.Handlers;
 using System.Globalization;
 using Maya.Music;
 using Maya.ModulesAddons;
@@ -86,7 +85,7 @@ namespace Maya.Modules.Commands
                 await ReplyAsync("", false, eb);
             }
 
-            [Command("add")]
+            [Command("add"), Priority(1)]
             [Summary("Add a new title")]
             [RequireAdmin]
             public async Task Add([Required] IGuildUser user = null, [Required, Remainder] string title = null)
@@ -105,7 +104,7 @@ namespace Maya.Modules.Commands
                 await ReplyAsync($"❕ **{user.Nickname ?? user.Username}** got a new title! 『{title}』!");
             }
 
-            [Command("delete")]
+            [Command("delete"), Priority(1)]
             [Summary("Delete an existing title")]
             [RequireAdmin]
             public async Task Delete([Required] IGuildUser user = null, [Required, Remainder] string title = null)
@@ -198,14 +197,14 @@ namespace Maya.Modules.Commands
                     EmbedBuilder eb = new EmbedBuilder();
                     if (isImg == 1)
                     {
-                        string[] ps = html.Split(new string[] { "]\">" }, StringSplitOptions.None)[1].Split(new string[] { "</h1>" }, StringSplitOptions.None);
-                        eb.Author = new EmbedAuthorBuilder().WithName($"**{ps[0]}**");
-                        eb.ImageUrl = ps[1].Split(new string[] { "<img src=\"" }, StringSplitOptions.None)[1].Split('"')[0];
+                        string[] ps = html.Split(new string[] { "og:title\" content=\"" }, StringSplitOptions.None)[1].Split(new string[] { "\">" }, StringSplitOptions.None);
+                        eb.Author = new EmbedAuthorBuilder().WithName($"{ps[0]}");
+                        eb.ImageUrl = ps[1].Split(new string[] { "og:image\" content=\"" }, StringSplitOptions.None)[1].Split('"')[0];
                     }
                     else
                     {
                         string[] ps = html.Split(new string[] { "<div class=\"thumbnail\">" }, StringSplitOptions.None)[1].Split(new string[] { "\">" }, StringSplitOptions.None)[1].Split(new string[] { "</h1>" }, StringSplitOptions.None);
-                        eb.Author = new EmbedAuthorBuilder().WithName($"**{ps[0]}**");
+                        eb.Author = new EmbedAuthorBuilder().WithName($"{ps[0]}");
                         eb.Description = Utils.StripTags(WebUtility.HtmlDecode(ps[1].Split(new string[] { " </div>" }, StringSplitOptions.None)[0].Trim()));
                     }
                     await ReplyAsync("", false, eb);
@@ -335,14 +334,14 @@ namespace Maya.Modules.Commands
                 {
                     ulong id = ulong.Parse(ids);
                     IMessage m = await Context.Channel.GetMessageAsync(id);
-                    if(m.Content.Length == 0)
+                    if (m.Content.Length == 0)
                     {
                         await ReplyAsync($"The message '{m.Id}' doesn't have any text.");
                         return;
                     }
                     if (author == null)
                         author = m.Author;
-                    else if(author != m.Author)
+                    else if (author != m.Author)
                     {
                         await ReplyAsync($"The message '{m.Id}' doesn't belong to the same user ({author.Username}).");
                         return;
@@ -351,14 +350,14 @@ namespace Maya.Modules.Commands
                 }
                 catch (Exception) { }
             }
-            if(msgs.Count==0)
+            if (msgs.Count == 0)
             {
                 await ReplyAsync("No messages to quote.");
                 return;
             }
             DateTime older, newer;
             older = newer = msgs.First().Timestamp.DateTime;
-            foreach(IMessage m in msgs.Skip(1))
+            foreach (IMessage m in msgs.Skip(1))
             {
                 if (older.CompareTo(m.Timestamp.DateTime) > 0)
                     older = m.Timestamp.DateTime;
@@ -372,7 +371,7 @@ namespace Maya.Modules.Commands
             }
             var ordered_msgs = msgs.OrderBy(x => x.Timestamp);
             EmbedBuilder eb = new EmbedBuilder();
-            eb.Author = new EmbedAuthorBuilder().WithName($"{author.Username}#{author.Discriminator}").WithIconUrl(author.AvatarUrl);
+            eb.Author = new EmbedAuthorBuilder().WithName($"{author.Username}#{author.Discriminator}").WithIconUrl(author.GetAvatarUrl());
             eb.Color = Utils.getRandomColor();
             eb.Description = String.Join("\n", ordered_msgs.Select(x => x.Content));
             eb.Timestamp = older;
@@ -398,7 +397,7 @@ namespace Maya.Modules.Commands
                 IUser user = await Context.Client.GetUserAsync(_tag.creator);
                 eb.Title = $"Tag: {_tag.tag}";
                 eb.Color = Utils.getRandomColor();
-                eb.Footer = new EmbedFooterBuilder().WithText($"Created by: {user.Username}#{user.Discriminator}").WithIconUrl(user.AvatarUrl);
+                eb.Footer = new EmbedFooterBuilder().WithText($"Created by: {user.Username}#{user.Discriminator}").WithIconUrl(user.GetAvatarUrl());
                 eb.Timestamp = _tag.when;
                 string text = "";
                 Match m;
@@ -417,11 +416,11 @@ namespace Maya.Modules.Commands
                 await ReplyAsync(text, false, eb);
             }
 
-            [Command("create")]
+            [Command("create"), Priority(1)]
             [Summary("Create a new tag")]
             public async Task Create([Required] string tag = null, [Required, Remainder] string text = null)
             {
-                if (Context.MainHandler.GuildTagHandler(Context.Guild).ContainsTag(tag) || tag.Equals("create",StringComparison.OrdinalIgnoreCase) || tag.Equals("delete", StringComparison.OrdinalIgnoreCase) || tag.Equals("edit", StringComparison.OrdinalIgnoreCase) || tag.Equals("info", StringComparison.OrdinalIgnoreCase) || tag.Equals("help", StringComparison.OrdinalIgnoreCase))
+                if (Context.MainHandler.GuildTagHandler(Context.Guild).ContainsTag(tag) || tag.Equals("create", StringComparison.OrdinalIgnoreCase) || tag.Equals("delete", StringComparison.OrdinalIgnoreCase) || tag.Equals("edit", StringComparison.OrdinalIgnoreCase) || tag.Equals("info", StringComparison.OrdinalIgnoreCase) || tag.Equals("help", StringComparison.OrdinalIgnoreCase))
                 {
                     await ReplyAsync("This tag already exists.");
                     return;
@@ -435,7 +434,7 @@ namespace Maya.Modules.Commands
                 await ReplyAsync($"Tag {tag} created!");
             }
 
-            [Command("delete")]
+            [Command("delete"), Priority(1)]
             [Summary("Delete an existing tag")]
             public async Task Delete([Required] string tag = null)
             {
@@ -454,7 +453,7 @@ namespace Maya.Modules.Commands
                 await ReplyAsync($"Tag {tag} deleted.");
             }
 
-            [Command("edit")]
+            [Command("edit"), Priority(1)]
             [Summary("Edit an existing tag")]
             public async Task Edit([Required] string tag = null, [Required, Remainder] string text = null)
             {
@@ -481,8 +480,8 @@ namespace Maya.Modules.Commands
             var application = await Context.Client.GetApplicationInfoAsync();
             EmbedBuilder eb = new EmbedBuilder();
             IGuildUser bot = await Context.Guild.GetCurrentUserAsync();
-            eb.Author = new EmbedAuthorBuilder().WithName(bot.Nickname ?? bot.Username).WithIconUrl(Context.Client.CurrentUser.AvatarUrl);
-            eb.ThumbnailUrl = Context.Client.CurrentUser.AvatarUrl;
+            eb.Author = new EmbedAuthorBuilder().WithName(bot.Nickname ?? bot.Username).WithIconUrl(Context.Client.CurrentUser.GetAvatarUrl());
+            eb.ThumbnailUrl = Context.Client.CurrentUser.GetAvatarUrl();
             eb.Color = Maya.Utils.getRandomColor();
             eb.Description = $"{Format.Bold("Info")}\n" +
                                 $"- Author: {application.Owner.Username} (ID {application.Owner.Id})\n" +
@@ -581,7 +580,7 @@ namespace Maya.Modules.Commands
             {
                 using (var http = new HttpClient())
                 {
-                    using (var sr = await http.GetStreamAsync(user.AvatarUrl))
+                    using (var sr = await http.GetStreamAsync(user.GetAvatarUrl()))
                     {
                         imgStream = new MemoryStream();
                         await sr.CopyToAsync(imgStream);
@@ -616,7 +615,7 @@ namespace Maya.Modules.Commands
             {
                 case "shipcache":
                     {
-                        Context.MainHandler.ShipHandler.torpedoesCache.Clear();
+                        Context.MainHandler.ShipHandler.ClearCache();
                         break;
                     }
                 case "ships":
@@ -662,7 +661,7 @@ namespace Maya.Modules.Commands
                     }
                 case "localdb":
                     {
-                        if(!(Context.Channel is ITextChannel))
+                        if (!(Context.Channel is ITextChannel))
                         {
                             await ReplyAsync("You aren't in a guild channel!");
                             return;
@@ -699,7 +698,7 @@ namespace Maya.Modules.Commands
                 return;
             }
             await Context.MainHandler.GuildPersonalityHandler(Context.Guild).LoadPersonalityAsync(name);
-            if(change_avatar)
+            if (change_avatar)
             {
                 String url = Context.MainHandler.GuildPersonalityHandler(Context.Guild).GetAvatarUrl();
                 MemoryStream imgStream = null;
@@ -724,11 +723,19 @@ namespace Maya.Modules.Commands
             await ReplyAsync($"Personality '{name}' loaded!");
         }
 
+        [Command("shutup")]
+        [RequireContext(ContextType.Guild)]
+        public async Task Shutup()
+        {
+            Context.MainHandler.GuildPersonalityHandler(Context.Guild).DisablePersonalityMessage();
+            await ReplyAsync($":x");
+        }
+
         [Command("ignore")]
         [RequireContext(ContextType.Guild)]
         public async Task Ignore([Required, Remainder] IUser user = null)
         {
-            if(Context.MainHandler.GuildIgnoreHandler(Context.Guild).Contains(user.Id))
+            if (Context.MainHandler.GuildIgnoreHandler(Context.Guild).Contains(user.Id))
             {
                 await ReplyAsync($"{user.Username}#{user.Discriminator} is already being ignored.");
                 return;
@@ -816,12 +823,14 @@ namespace Maya.Modules.Commands
                 using (Context.Channel.EnterTypingState())
                 {
                     String ss = await r[0].GetSimpleStatsAsync();
-                    EmbedBuilder eb = new EmbedBuilder();
-                    eb.Title = r[0].GetHeadStats();
-                    eb.Color = Utils.getRandomColor();
-                    eb.Description = ss;
-                    eb.ThumbnailUrl = r[0].GetImageUrl();
-                    eb.Footer = new EmbedFooterBuilder().WithText("[!] Warning: WoWS ship profile is broken (stock values everywhere)!");
+                    EmbedBuilder eb = new EmbedBuilder()
+                    {
+                        Title = r[0].GetHeadStats(),
+                        Color = Utils.getRandomColor(),
+                        Description = ss,
+                        ThumbnailUrl = r[0].GetImageUrl()
+                    };
+                    //eb.Footer = new EmbedFooterBuilder().WithText("[!] Warning: WoWS ship profile is broken (stock values everywhere)!");
                     await ReplyAsync("", false, eb);
                 }
             }
@@ -909,7 +918,7 @@ namespace Maya.Modules.Commands
         {
             MusicContext context = new MusicContext(Context);
             MusicResult mr = Context.MainHandler.GuildMusicHandler(Context.Guild).CanUserAddToQueue(context, false);
-            if(!mr.IsSuccessful)
+            if (!mr.IsSuccessful)
             {
                 await ReplyAsync(mr.Error);
                 return;
@@ -982,7 +991,7 @@ namespace Maya.Modules.Commands
         [RequireAdmin]
         public async Task Volume(Nullable<int> volume = null)
         {
-            if(volume == null)
+            if (volume == null)
             {
                 await ReplyAsync($"Current volume: {Context.MainHandler.GuildMusicHandler(Context.Guild).GetVolume()}%.\nChange it with: {Context.MainHandler.GetCommandPrefix(Context.Channel)}volume [0-100]");
                 return;
@@ -1119,8 +1128,8 @@ namespace Maya.Modules.Commands
             var application = await Context.Client.GetApplicationInfoAsync();
             EmbedBuilder eb = new EmbedBuilder();
             IGuildUser bot = await Context.Guild.GetCurrentUserAsync();
-            eb.Author = new EmbedAuthorBuilder().WithName("Credits").WithIconUrl(Context.Client.CurrentUser.AvatarUrl);
-            eb.ThumbnailUrl = application.Owner.AvatarUrl;
+            eb.Author = new EmbedAuthorBuilder().WithName("Credits").WithIconUrl(Context.Client.CurrentUser.GetAvatarUrl());
+            eb.ThumbnailUrl = application.Owner.GetAvatarUrl();
             eb.Color = Maya.Utils.getRandomColor();
             eb.Description = $"Created by: {application.Owner.Mention}\n" +
                              $"Suggestions? Tell him. 😄\n\n" +

@@ -60,6 +60,11 @@ namespace Maya.GuildHandlers
             }
         }
 
+        public void DisablePersonalityMessage()
+        {
+            timer.Change(Timeout.Infinite, Timeout.Infinite);
+        }
+
         public async Task LoadPersonalityAsync(string name)
         {
             if (!ExistsPersonality(name))

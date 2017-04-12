@@ -24,9 +24,8 @@ namespace Maya
 
             Discord = new DiscordSocketClient(new DiscordSocketConfig()
             {
-                AudioMode = AudioMode.Outgoing,
                 LogLevel = LogSeverity.Error,
-                AlwaysDownloadUsers = true
+                AlwaysDownloadUsers = true,
             });
 
             Discord.Log += (message) =>
@@ -44,7 +43,9 @@ namespace Maya
             await MainHandler.InitializeEarlyAsync(map);
 
             await Discord.LoginAsync(TokenType.Bot, MainHandler.ConfigHandler.GetBotToken());
-            await Discord.ConnectAsync();
+            await Discord.StartAsync();
+
+            await Task.Delay(3000);
             Console.WriteLine("Connected!");
 
             await Discord.SetGameAsync(null);
