@@ -1,29 +1,29 @@
-﻿{
+{
   "CommandPrefix": "?",
   "AllowedChannels": [],
   "Notifications": {
-    "Enabled": true,
+    "Enabled": false,
     "TextChannel": "general"
   },
   "ForumUpdates": {
-    "Enabled": true,
+    "Enabled": false,
     "TextChannel": "announcements"
   },
   "Music": {
-    "Enabled": true,
+    "Enabled": false,
     "TextChannels": [ "music" ],
     "VoiceChannel": "music"
   },
   "ChatterBot": {
-    "Enabled": true,
+    "Enabled": false,
     "TextChannels": [ "general" ]
   },
   "SwearJar": {
-    "Enabled": true,
+    "Enabled": false,
     "TextChannels": []
   },
   "AutoResponse": {
-    "Enabled": true,
+    "Enabled": false,
     "TextChannels": []
   }
 }

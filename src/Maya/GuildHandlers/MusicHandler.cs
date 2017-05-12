@@ -5,6 +5,7 @@ using Maya.Music;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Maya.GuildHandlers
@@ -13,6 +14,7 @@ namespace Maya.GuildHandlers
     {
         private GuildHandler GuildHandler;
         private IVoiceChannel voiceChannel;
+        private Timer timer;
         private MusicQueue queue;
         private MusicPlayer player;
         private readonly int maxQueue = 10;
@@ -108,6 +110,17 @@ namespace Maya.GuildHandlers
                 await player.audioClient.StopAsync();
             voiceChannel = channel;
             player.audioClient = await channel.ConnectAsync();
+            timer = new Timer(CheckChannelState, null, TimeSpan.FromMinutes(10), TimeSpan.FromMinutes(10));
+        }
+
+        private async void CheckChannelState(object state)
+        {
+            if (voiceChannel != null && (await voiceChannel.GetUsersAsync().Flatten()).Count() < 2)
+            {
+                await Close();
+                timer.Dispose();
+                timer = null;
+            }
         }
 
         public async Task ResetAsync()

@@ -16,7 +16,7 @@ namespace Maya.Attributes
             Text = text;
         }
 
-        public override Task<PreconditionResult> CheckPermissions(ICommandContext context, ParameterInfo parameter, object value, IDependencyMap map)
+        public override Task<PreconditionResult> CheckPermissions(ICommandContext context, ParameterInfo parameter, object value, IServiceProvider map)
         {
             if(!(context is MayaCommandContext))
                 return Task.FromResult(PreconditionResult.FromSuccess());

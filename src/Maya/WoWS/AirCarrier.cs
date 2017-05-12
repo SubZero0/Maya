@@ -12,19 +12,24 @@ namespace Maya.WoWS
     {
         private MainHandler MainHandler;
         private JObject ship;
-        private JObject ship_max;
+        private JObject shipMax;
         private List<JObject> cv;
         public AirCarrier(MainHandler MainHandler, JObject o)
         {
             this.MainHandler = MainHandler;
             ship = o;
-            ship_max = null;
+            shipMax = null;
             cv = null;
         }
 
         public string GetName()
         {
             return (String)ship["name"];
+        }
+
+        public ulong GetId()
+        {
+            return (ulong)ship["ship_id"];
         }
 
         public string GetImageUrl()
@@ -61,7 +66,7 @@ namespace Maya.WoWS
                     case "Engine": { search += $"&engine_id={str}"; break; }
                 }
             }
-            ship_max = await MainHandler.ShipHandler.GetMaxShipAsync(search);
+            shipMax = await MainHandler.ShipHandler.GetMaxShipAsync(search);
             cv = await MainHandler.ShipHandler.GetCVAsync(cv_modules);
         }
 
@@ -72,37 +77,37 @@ namespace Maya.WoWS
 
         public async Task<string> GetSimpleStatsAsync()
         {
-            if (ship_max == null || cv == null)
+            if (shipMax == null || cv == null)
             {
                 await UpdateDataAsync();
-                if (ship_max == null)
+                if (shipMax == null)
                     return "A problem occurred while getting the max stats from this ship.";
                 if (cv == null)
                     return "A problem occurred while getting the cv stats.";
             }
-            JObject armour = (JObject)ship_max["armour"];
-            JObject mobility = (JObject)ship_max["mobility"];
-            JObject concealment = (JObject)ship_max["concealment"];
+            JObject armour = (JObject)shipMax["armour"];
+            JObject mobility = (JObject)shipMax["mobility"];
+            JObject concealment = (JObject)shipMax["concealment"];
             string simple = "";
-            simple += "HP: " + ((JObject)ship_max["hull"])["health"] + "\n";
-            simple += "Planes: " + ((JObject)ship_max["hull"])["planes_amount"] + "\n";
+            simple += "HP: " + ((JObject)shipMax["hull"])["health"] + "\n";
+            simple += "Planes: " + ((JObject)shipMax["hull"])["planes_amount"] + "\n";
             if ((String)armour["flood_prob"] != "0")
                 simple += "Torpedo protection (flooding): " + armour["flood_prob"] + "%\n";
             if ((String)armour["flood_damage"] != "0")
                 simple += "Torpedo protection (damage): " + armour["flood_damage"] + "%\n";
 
             simple += "**Flight control** (F/TB/DB):\n";
-            JObject flight_control = (JObject)ship_max["flight_control"];
+            JObject flight_control = (JObject)shipMax["flight_control"];
             simple += $"- {flight_control["fighter_squadrons"]}/{flight_control["torpedo_squadrons"]}/{flight_control["bomber_squadrons"]}\n";
             foreach (JObject module in cv.Where(x => (string)x["type"] == "FlightControl"))
             {
                 flight_control = (JObject)module["profile"]["flight_control"];
                 simple += $"- {flight_control["fighter_squadrons"]}/{flight_control["torpedo_squadrons"]}/{flight_control["bomber_squadrons"]}\n";
             }
-            if (ship_max["fighters"] != null)
+            if (shipMax["fighters"] != null && shipMax["fighters"].HasValues)
             {
                 simple += "**Fighter**:\n";
-                JObject fighters = (JObject)ship_max["fighters"];
+                JObject fighters = (JObject)shipMax["fighters"];
                 simple += $"- {fighters["name"]}: [Dmg: {fighters["avg_damage"]}, HP: {fighters["max_health"]}, Speed: {fighters["cruise_speed"]}, Ammo: {fighters["max_ammo"]}]\n";
                 foreach (JObject module in cv.Where(x => (string)x["type"] == "Fighter"))
                 {
@@ -110,26 +115,26 @@ namespace Maya.WoWS
                     simple += $"- {module["name"]}: [Dmg: {fighters["avg_damage"]}, HP: {fighters["max_health"]}, Speed: {fighters["cruise_speed"]}, Ammo: {fighters["max_ammo"]}]\n";
                 }
             }
-            if (ship_max["dive_bomber"] != null)
-            {
-                simple += "**Dive bomber**:\n";
-                JObject dbs = (JObject)ship_max["dive_bomber"];
-                simple += $"- {dbs["name"]}: [Dmg: {dbs["max_damage"]}, HP: {dbs["max_health"]}, Speed: {dbs["cruise_speed"]}]\n";
-                foreach (JObject module in cv.Where(x => (string)x["type"] == "DiveBomber"))
-                {
-                    dbs = (JObject)module["profile"]["dive_bomber"];
-                    simple += $"- {module["name"]}: [Dmg: {dbs["max_damage"]}, HP: {dbs["max_health"]}, Speed: {dbs["cruise_speed"]}]\n";
-                }
-            }
-            if (ship_max["torpedo_bomber"] != null)
+            if (shipMax["torpedo_bomber"] != null && shipMax["torpedo_bomber"].HasValues)
             {
                 simple += "**Torpedo bomber**:\n";
-                JObject tbs = (JObject)ship_max["torpedo_bomber"];
+                JObject tbs = (JObject)shipMax["torpedo_bomber"];
                 simple += $"- {tbs["name"]}: [Dmg: {tbs["max_damage"]}, HP: {tbs["max_health"]}, Speed: {tbs["cruise_speed"]}, TorpSpeed: {tbs["torpedo_max_speed"]} kts]\n";
                 foreach (JObject module in cv.Where(x => (string)x["type"] == "TorpedoBomber"))
                 {
                     tbs = (JObject)module["profile"]["torpedo_bomber"];
                     simple += $"- {module["name"]}: [Dmg: {tbs["max_damage"]}, HP: {tbs["max_health"]}, Speed: {tbs["cruise_speed"]}, TorpSpeed: {tbs["torpedo_max_speed"]} kts]\n";
+                }
+            }
+            if (shipMax["dive_bomber"] != null && shipMax["dive_bomber"].HasValues)
+            {
+                simple += "**Dive bomber**:\n";
+                JObject dbs = (JObject)shipMax["dive_bomber"];
+                simple += $"- {dbs["name"]}: [Dmg: {dbs["max_damage"]}, HP: {dbs["max_health"]}, Speed: {dbs["cruise_speed"]}]\n";
+                foreach (JObject module in cv.Where(x => (string)x["type"] == "DiveBomber"))
+                {
+                    dbs = (JObject)module["profile"]["dive_bomber"];
+                    simple += $"- {module["name"]}: [Dmg: {dbs["max_damage"]}, HP: {dbs["max_health"]}, Speed: {dbs["cruise_speed"]}]\n";
                 }
             }
             simple += "**Mobility**:\n";

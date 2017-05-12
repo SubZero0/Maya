@@ -121,7 +121,7 @@ namespace Maya.Modules.Functions
             EmbedBuilder eb = new EmbedBuilder();
             eb.Author = eab;
             eb.Url = url[0];
-            eb.Color = Utils.getRandomColor();
+            eb.Color = Utils.GetRandomColor();
             string text="";
             try { text=await GetForumThreadTextAsync(url[0]); } catch (Exception ex) { Console.WriteLine(ex.ToString()); text = ""; }
             eb.Description = $"[{url[1].Split(new string[] { "'>" }, StringSplitOptions.None)[1].Split(new string[] { "</a>" }, StringSplitOptions.None)[0]}]({url[0]})" + text;

@@ -52,7 +52,7 @@ namespace Maya.WoWS
                     case "Destroyer": { s = new DCB(MainHandler, o); break; }
                 }
                 //s.updateData(); ## com await demora mt, sem await ele dá errado -.-
-                ships.Add(((String)o["name"]).Replace('ū', 'u').Replace('ß', 'b').Replace('ü', 'u').Replace('ł', 'l').Replace('ö', 'o').Replace('ü', 'u').Replace('ō', 'o').ToLower(), s);
+                ships.Add((ClearShipName((String)o["name"])), s);
             }
             ready = true;
         }
@@ -69,7 +69,7 @@ namespace Maya.WoWS
 
         public List<IShip> SearchShips(string name)
         {
-            name = name.ToLower();
+            name = ClearShipName(name);
             List<IShip> lista = new List<IShip>();
             if (ships.ContainsKey(name))
             {
@@ -82,9 +82,34 @@ namespace Maya.WoWS
             return lista;
         }
 
-        public string[] GetShipList()
+        public IShip GetShipById(string id)
+        {
+            ulong id2;
+            if (!ulong.TryParse(id, out id2))
+                return null;
+            return GetShipById(id2);
+        }
+        public IShip GetShipById(ulong id)
+        {
+            foreach (IShip ship in ships.Values)
+                if (ship.GetId() == id)
+                    return ship;
+            return null;
+        }
+
+        private string ClearShipName(string name)
+        {
+            return name.Replace('ū', 'u').Replace('ß', 'b').Replace('ü', 'u').Replace('ł', 'l').Replace('ö', 'o').Replace('ü', 'u').Replace('ō', 'o').Replace('è', 'e').Replace('é', 'e').Replace('É', 'e').ToLower();
+        }
+
+        public string[] GetShipNameList()
         {
             return ships.Keys.ToArray();
+        }
+
+        public IShip[] GetShipList()
+        {
+            return ships.Values.ToArray();
         }
 
         public string ShipNation(string nation)
@@ -100,6 +125,7 @@ namespace Maya.WoWS
                 case "germany": { return "German"; }
                 case "uk": { return "British"; }
                 case "japan": { return "Japanese"; }
+                case "italy": { return "Italian"; }
                 default: { return nation; }
             }
         }

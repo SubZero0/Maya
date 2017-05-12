@@ -27,6 +27,11 @@ namespace Maya.WoWS
             return (String)ship["name"];
         }
 
+        public ulong GetId()
+        {
+            return (ulong)ship["ship_id"];
+        }
+
         public string GetImageUrl()
         {
             return (string)((JObject)ship["images"])["small"];
@@ -90,9 +95,9 @@ namespace Maya.WoWS
             simple += "- Reload: " + artillery["shot_delay"] + "s\n";
             simple += "- Range: " + artillery["distance"] + "km\n";
             simple += "- Dispersion: " + artillery["max_dispersion"] + "m\n";
-            simple += "- Damage: [AP: " + (artillery_shells["AP"].Children().Count() != 0 ? ((JObject)artillery_shells["AP"])["damage"] : "-") + ", HE: " + (artillery_shells["HE"].Children().Count() != 0 ? ((JObject)artillery_shells["HE"])["damage"] : "-") + "]\n";
-            if (artillery_shells["HE"].Children().Count() != 0)
-                simple += "   Fire chance: " + ((JObject)artillery_shells["HE"])["burn_probability"] + "%\n";
+            simple += "- Damage: [AP: " + (artillery_shells["AP"] != null ? ((JObject)artillery_shells["AP"])["damage"] : "-") + ", HE: " + (artillery_shells["HE"] != null ? ((JObject)artillery_shells["HE"])["damage"] : "-") + "]\n";
+            if (artillery_shells["HE"] != null)
+                simple += "- Fire chance: " + ((JObject)artillery_shells["HE"])["burn_probability"] + "%\n";
             JArray torpedoes = (JArray)((JObject)ship["modules"])["torpedoes"];
             if (torpedoes.Count() != 0)
             {

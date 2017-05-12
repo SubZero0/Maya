@@ -11,6 +11,7 @@ namespace Maya.WoWS
         Task<string> GetSimpleStatsAsync();
         Task UpdateDataAsync();
         string GetName();
+        ulong GetId();
         string GetImageUrl();
     }
 }

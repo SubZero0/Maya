@@ -17,7 +17,7 @@ namespace Maya.Attributes
             _level = level;
         }
 
-        public async override Task<PreconditionResult> CheckPermissions(ICommandContext context, CommandInfo command, IDependencyMap map)
+        public async override Task<PreconditionResult> CheckPermissions(ICommandContext context, CommandInfo command, IServiceProvider map)
         {
             if (!(context is MayaCommandContext))
                 return PreconditionResult.FromError("null");

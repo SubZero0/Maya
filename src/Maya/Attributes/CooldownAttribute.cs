@@ -1,37 +1,36 @@
-﻿using Discord.Commands;
+﻿using Discord;
+using Discord.Commands;
+using Maya.Interfaces;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Maya.Attributes
 {
-    public class CooldownAttribute : PreconditionAttribute
+    public class CooldownAttribute : PreconditionAttribute, Ignore
     {
-        private Timer timer;
-        private bool cd;
+        private Dictionary<IGuild, Timer> cd;
         private int _cooldown; //seconds
         public CooldownAttribute(int cooldown = 60)
         {
-            cd = false;
+            cd = new Dictionary<IGuild, Timer>();
             _cooldown = cooldown;
-            timer = new Timer(Timer_Reset, null, Timeout.Infinite, Timeout.Infinite);
         }
 
-        public override Task<PreconditionResult> CheckPermissions(ICommandContext context, CommandInfo command, IDependencyMap map)
+        public override Task<PreconditionResult> CheckPermissions(ICommandContext context, CommandInfo command, IServiceProvider map)
         {
-            if (cd)
+            if (cd.ContainsKey(context.Guild))
                 return Task.FromResult(PreconditionResult.FromError(SearchResult.FromError(CommandError.UnknownCommand, "Unknown command.")));
-            cd = true;
-            timer.Change(_cooldown * 1000, Timeout.Infinite);
+            var timer = new Timer(Timer_Reset, context.Guild, _cooldown * 1000, Timeout.Infinite);
+            cd.Add(context.Guild, timer);
             return Task.FromResult(PreconditionResult.FromSuccess());
         }
 
         private void Timer_Reset(object state)
         {
-            cd = false;
-            timer.Change(Timeout.Infinite, Timeout.Infinite);
+            cd[(IGuild)state].Dispose();
+            cd.Remove((IGuild)state);
         }
     }
 }

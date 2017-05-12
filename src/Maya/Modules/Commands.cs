@@ -54,7 +54,7 @@ namespace Maya.Modules.Commands
                 JObject image = (JObject)arr[0];
                 EmbedBuilder eb = new EmbedBuilder();
                 eb.Title = $"Image: {search}";
-                eb.Color = Utils.getRandomColor();
+                eb.Color = Utils.GetRandomColor();
                 eb.Description = $"[Image link]({(string)image["contentUrl"]})";
                 eb.ImageUrl = (string)image["contentUrl"];
                 await ReplyAsync("", false, eb);
@@ -80,7 +80,7 @@ namespace Maya.Modules.Commands
                 }
                 EmbedBuilder eb = new EmbedBuilder();
                 eb.Title = $"{user.Nickname ?? user.Username}'s Titles";
-                eb.Color = Utils.getRandomColor();
+                eb.Color = Utils.GetRandomColor();
                 eb.Description = $"『{String.Join("』 『", titles)}』";
                 await ReplyAsync("", false, eb);
             }
@@ -119,9 +119,16 @@ namespace Maya.Modules.Commands
             }
         }
 
+        [Command("choose")]
+        [Summary("Choose one of the choices")]
+        public async Task Choose([Required] params string[] choices)
+        {
+            await ReplyAsync(choices[new Random().Next(choices.Length)]);
+        }
+
         [Command("swearjar")]
         [Summary("Show how much money the swear jar currently has")]
-        [RequireContext(ContextType.Guild)]
+        [RequireSwearjar]
         public async Task Swearjar()
         {
             if (!Context.MainHandler.GuildDatabaseHandler(Context.Guild).IsReady())
@@ -135,7 +142,7 @@ namespace Maya.Modules.Commands
         [Command("marry")]
         [Summary("Make a proposal")]
         [RequireContext(ContextType.Guild)]
-        [Cooldown(120)]
+        [Cooldown]
         public async Task Marry()
         {
             if (!Context.MainHandler.GuildPersonalityHandler(Context.Guild).IsReady())
@@ -144,6 +151,34 @@ namespace Maya.Modules.Commands
                 return;
             }
             await ReplyAsync(Utils.GetRandomWeightedChoice(Context.MainHandler.GuildPersonalityHandler(Context.Guild).GetMarryAnswers()));
+        }
+
+        [Command("kill"), Priority(1)]
+        [Summary("Stabs someone or something")]
+        [RequireContext(ContextType.Guild)]
+        public async Task Kill([Required, Remainder] IGuildUser who = null)
+        {
+            if (!Context.MainHandler.GuildPersonalityHandler(Context.Guild).IsReady())
+            {
+                await ReplyAsync("Loading...");
+                return;
+            }
+            if (who.Id == (await Context.Client.GetApplicationInfoAsync()).Owner.Id && Context.User.Id == (await Context.Client.GetApplicationInfoAsync()).Owner.Id)
+                await ReplyAsync("I can't kill you :(");
+            else if (who.Id == (await Context.Client.GetApplicationInfoAsync()).Owner.Id && Context.User.Id != (await Context.Client.GetApplicationInfoAsync()).Owner.Id)
+                await ReplyAsync("I can't kill Paulo...\n* stabs you *");
+            else if (who.Id == Context.Client.CurrentUser.Id && await Context.MainHandler.PermissionHandler.IsAtLeastAsync(Context.User, AdminLevel.OWNER))
+            {
+                await ReplyAsync(Context.MainHandler.GuildPersonalityHandler(Context.Guild).GetOfflineString());
+                await Task.Delay(1000);
+                Environment.Exit(0);
+            }
+            else if (who.Id == Context.Client.CurrentUser.Id)
+                await ReplyAsync("I won't kill myself...\n* stabs you *");
+            else if (who.Id == Context.User.Id)
+                await ReplyAsync($"It's my pleasure! ^-^\n* stabs {Context.User.Mention} *");
+            else
+                await ReplyAsync($"It's my pleasure! ^-^\n* stabs {who.Mention} *");
         }
 
         [Command("kill")]
@@ -239,8 +274,7 @@ namespace Maya.Modules.Commands
                         "Very doubtful"
                     };
             EmbedBuilder eb = new EmbedBuilder();
-            eb.Author = new EmbedAuthorBuilder().WithName($"Question: {question}");
-            eb.Description = ans[new Random().Next(ans.Length)];
+            eb.Description = $"**Question: {question}**\n{ans[new Random().Next(ans.Length)]}";
             await ReplyAsync("", false, eb);
         }
 
@@ -265,7 +299,11 @@ namespace Maya.Modules.Commands
                     return;
                 }
                 string html = await res.Content.ReadAsStringAsync();
-                string result = html.Split(new string[] { "<div class='meaning'>" }, StringSplitOptions.None)[1].Split(new string[] { "</div>" }, StringSplitOptions.None)[0];
+                string result;
+                if (html.Contains("<div class=\"meaning\">"))
+                    result = html.Split(new string[] { "<div class=\"meaning\">" }, StringSplitOptions.None)[1].Split(new string[] { "</div>" }, StringSplitOptions.None)[0];
+                else
+                    result = html.Split(new string[] { "<div class='meaning'>" }, StringSplitOptions.None)[1].Split(new string[] { "</div>" }, StringSplitOptions.None)[0];
                 if (result.Contains("<p>There aren't any definitions for"))
                 {
                     await ReplyAsync($"No definitions for '{text}'.");
@@ -281,7 +319,7 @@ namespace Maya.Modules.Commands
                         }
                 EmbedBuilder eb = new EmbedBuilder();
                 eb.Title = $"Meaning: {text}";//TODO: Add urban img?
-                eb.Color = Utils.getRandomColor();
+                eb.Color = Utils.GetRandomColor();
                 eb.Description = output;
                 await ReplyAsync("", false, eb);
             }
@@ -289,6 +327,7 @@ namespace Maya.Modules.Commands
 
         [Command("mywtr")]
         [Summary("Show a random answer to how good you are")]
+        [RequireContext(ContextType.Guild)]
         [Cooldown]
         public async Task Mywtr()
         {
@@ -372,7 +411,7 @@ namespace Maya.Modules.Commands
             var ordered_msgs = msgs.OrderBy(x => x.Timestamp);
             EmbedBuilder eb = new EmbedBuilder();
             eb.Author = new EmbedAuthorBuilder().WithName($"{author.Username}#{author.Discriminator}").WithIconUrl(author.GetAvatarUrl());
-            eb.Color = Utils.getRandomColor();
+            eb.Color = Utils.GetRandomColor();
             eb.Description = String.Join("\n", ordered_msgs.Select(x => x.Content));
             eb.Timestamp = older;
             await ReplyAsync("", false, eb);
@@ -395,8 +434,7 @@ namespace Maya.Modules.Commands
                 Tag _tag = Context.MainHandler.GuildTagHandler(Context.Guild).GetTag(tag);
                 EmbedBuilder eb = new EmbedBuilder();
                 IUser user = await Context.Client.GetUserAsync(_tag.creator);
-                eb.Title = $"Tag: {_tag.tag}";
-                eb.Color = Utils.getRandomColor();
+                eb.Color = Utils.GetRandomColor();
                 eb.Footer = new EmbedFooterBuilder().WithText($"Created by: {user.Username}#{user.Discriminator}").WithIconUrl(user.GetAvatarUrl());
                 eb.Timestamp = _tag.when;
                 string text = "";
@@ -409,10 +447,10 @@ namespace Maya.Modules.Commands
                 else if ((m = Regex.Match(_tag.text, "(http)?s?:?(//[^\"']*\\.(?:png|jpg|jpeg|gif|png|svg))")).Success)
                 {
                     eb.ImageUrl = m.Captures[0].Value;
-                    eb.Description = _tag.text;
+                    eb.Description = $"**Tag: {_tag.tag}**\n{_tag.text}";
                 }
                 else
-                    eb.Description = _tag.text;
+                    eb.Description = $"**Tag: {_tag.tag}**\n{_tag.text}";
                 await ReplyAsync(text, false, eb);
             }
 
@@ -482,7 +520,7 @@ namespace Maya.Modules.Commands
             IGuildUser bot = await Context.Guild.GetCurrentUserAsync();
             eb.Author = new EmbedAuthorBuilder().WithName(bot.Nickname ?? bot.Username).WithIconUrl(Context.Client.CurrentUser.GetAvatarUrl());
             eb.ThumbnailUrl = Context.Client.CurrentUser.GetAvatarUrl();
-            eb.Color = Maya.Utils.getRandomColor();
+            eb.Color = Maya.Utils.GetRandomColor();
             eb.Description = $"{Format.Bold("Info")}\n" +
                                 $"- Author: {application.Owner.Username} (ID {application.Owner.Id})\n" +
                                 $"- Library: Discord.Net ({DiscordConfig.Version})\n" +
@@ -499,7 +537,7 @@ namespace Maya.Modules.Commands
     }
 
     [Name("Admin")]
-    [RequireAdmin]
+    [RequireAdmin(AdminLevel.MODERATOR)]
     public class AdminCommands : ModuleBase<MayaCommandContext>
     {
         [Command("eval", RunMode = RunMode.Async)]
@@ -548,6 +586,7 @@ namespace Maya.Modules.Commands
         }
 
         [Command("avatar")]
+        [RequireAdmin(AdminLevel.ADMIN)]
         public async Task Avatar([Required, Remainder] string url = null)
         {
             MemoryStream imgStream = null;
@@ -573,6 +612,7 @@ namespace Maya.Modules.Commands
         }
 
         [Command("変化の術")]
+        [RequireAdmin(AdminLevel.ADMIN)]
         public async Task Henge([Required, Remainder] IGuildUser user = null)
         {
             MemoryStream imgStream = null;
@@ -599,6 +639,7 @@ namespace Maya.Modules.Commands
         }
 
         [Command("forcesave")]
+        [RequireAdmin(AdminLevel.ADMIN)]
         [RequireContext(ContextType.Guild)]
         public async Task Forcesave()
         {
@@ -609,6 +650,7 @@ namespace Maya.Modules.Commands
         }
 
         [Command("reload")]
+        [RequireAdmin(AdminLevel.ADMIN)]
         public async Task Reload([Required("shipcache/ships/shipsplayers/answers/config/guild/localconfig/localdb/localmusic"), Remainder] string what = null)
         {
             switch (what)
@@ -689,6 +731,7 @@ namespace Maya.Modules.Commands
         }
 
         [Command("personality")]
+        [RequireAdmin(AdminLevel.ADMIN)]
         [RequireContext(ContextType.Guild)]
         public async Task Personality([Required] string name = null, bool change_avatar = false)
         {
@@ -758,6 +801,7 @@ namespace Maya.Modules.Commands
         }
 
         [Command("voice", RunMode = RunMode.Async)]
+        [RequireAdmin(AdminLevel.ADMIN)]
         [RequireContext(ContextType.Guild)]
         public async Task Voice([Required, Remainder] IVoiceChannel channel = null)
         {
@@ -808,6 +852,11 @@ namespace Maya.Modules.Commands
                 await ReplyAsync("Loading ship database.");
                 return;
             }
+            if (ship.Length < 2)
+            {
+                await ReplyAsync("Type at least 2 characters.");
+                return;
+            }
             List<IShip> r = Context.MainHandler.ShipHandler.SearchShips(ship);
             if (r.Count() == 0)
                 await ReplyAsync("No ships found with or containing that name.");
@@ -826,7 +875,7 @@ namespace Maya.Modules.Commands
                     EmbedBuilder eb = new EmbedBuilder()
                     {
                         Title = r[0].GetHeadStats(),
-                        Color = Utils.getRandomColor(),
+                        Color = Utils.GetRandomColor(),
                         Description = ss,
                         ThumbnailUrl = r[0].GetImageUrl()
                     };
@@ -834,7 +883,6 @@ namespace Maya.Modules.Commands
                     await ReplyAsync("", false, eb);
                 }
             }
-            return;
         }
 
         [Command("ships")]
@@ -851,7 +899,15 @@ namespace Maya.Modules.Commands
                 await ReplyAsync("Loading ship database.");
                 return;
             }
-            await ReplyAsync($"Ship list: {String.Join(", ", Context.MainHandler.ShipHandler.GetShipList())}");
+            var shipList = Context.MainHandler.ShipHandler.GetShipNameList();
+            var ordShipList = shipList.OrderBy(x => x);
+            var eb = new EmbedBuilder();
+            eb.Title = $"Ship list ({shipList.Length}) - WILL FIX SOON:tm:";
+            eb.AddInlineField("​", String.Join("\n", ordShipList.Take(10)));
+            eb.AddInlineField("​", String.Join("\n", ordShipList.Skip(10).Take(10)));
+            eb.AddInlineField("​", String.Join("\n", ordShipList.Skip(20).Take(10)));
+            eb.Footer = new EmbedFooterBuilder().WithText($"Page 1/{Math.Ceiling(shipList.Length / 30.0)}");
+            await ReplyAsync("", embed: eb);
         }
 
         [Command("wtr")]
@@ -906,6 +962,202 @@ namespace Maya.Modules.Commands
                 File.Delete($"Temp{Path.DirectorySeparatorChar}{account_id}.png");
             }
         }
+
+        [Command("stats")]
+        [Summary("Show the stats from a player")]
+        public async Task Stats([Required] string username = null, [Remainder] string ship = null)
+        {
+            try
+            {
+                if (Regex.Match(username, "^[a-zA-Z0-9_]{3,24}$") == Match.Empty)
+                {
+                    await ReplyAsync("Invalid username.");
+                    return;
+                }
+                using (var typing = Context.Channel.EnterTypingState())
+                {
+                    string account_id = null;
+                    string account_name = null;
+                    using (var httpClient = new HttpClient())
+                    {
+                        var jsonraw = await httpClient.GetStringAsync($"https://api.worldofwarships.com/wows/account/list/?application_id=ca60f30d0b1f91b195a521d4aa618eee&type=startswith&limit=1&search={username}");
+                        JObject json = JObject.Parse(jsonraw);
+                        if ((String)json["status"] != "ok")
+                        {
+                            await ReplyAsync("Something went wrong with the WoWS API.");
+                            typing.Dispose();
+                            return;
+                        }
+                        JArray data = (JArray)json["data"];
+                        if (data.Count() == 0)
+                        {
+                            await ReplyAsync("No results found.");
+                            typing.Dispose();
+                            return;
+                        }
+                        JObject result = (JObject)data[0];
+                        account_id = (String)result["account_id"];
+                        account_name = (String)result["nickname"];
+                    }
+                    if (ship == null)
+                    {
+                        //user stats
+                        JObject result;
+                        using (var httpClient = new HttpClient())
+                        {
+                            var jsonraw = await httpClient.GetStringAsync($"https://api.worldofwarships.com/wows/account/info/?application_id=ca60f30d0b1f91b195a521d4aa618eee&account_id={account_id}");
+                            JObject json = JObject.Parse(jsonraw);
+                            if ((String)json["status"] != "ok")
+                            {
+                                await ReplyAsync("Something went wrong with the WoWS API.");
+                                typing.Dispose();
+                                return;
+                            }
+                            JObject data = (JObject)json["data"];
+                            result = (JObject)data[$"{account_id}"];
+                        }
+                        EmbedBuilder eb = new EmbedBuilder();
+                        eb.Title = $"Stats of {account_name}";
+                        eb.Color = Utils.GetRandomColor();
+                        string accInfo = $"**Created at**: {Utils.UnixTimestampToString((string)result["created_at"])}\n" +
+                                         $"**Last battle**: {Utils.UnixTimestampToString((string)result["last_battle_time"])}\n" +
+                                         $"**Last logout**: {Utils.UnixTimestampToString((string)result["logout_at"])}";
+                        eb.AddField("Account info", accInfo);
+                        string stats;
+                        if ((bool)result["hidden_profile"])
+                            stats = "This profile is hidden.";
+                        else
+                        {
+                            JObject statistics = (JObject)result["statistics"];
+                            JObject pvp = (JObject)statistics["pvp"];
+                            JObject main = (JObject)pvp["main_battery"];
+                            JObject secondary = (JObject)pvp["second_battery"];
+                            JObject torps = (JObject)pvp["torpedoes"];
+                            JObject ram = (JObject)pvp["ramming"];
+                            JObject aircraft = (JObject)pvp["aircraft"];
+                            IShip bestShipDmg = Context.MainHandler.ShipHandler.GetShipById((string)pvp["max_damage_dealt_ship_id"]);
+                            eb.ThumbnailUrl = bestShipDmg?.GetImageUrl();
+                            stats = $"**Battles**: {pvp["battles"]} ({pvp["wins"]}W/{pvp["losses"]}L/{pvp["draws"]}T - WR: {Utils.Percentage((float)pvp["wins"], (float)pvp["battles"])} - SR: {Utils.Percentage((float)pvp["survived_battles"], (float)pvp["battles"])})\n" +
+                                    $"**Best ships**:\n" +
+                                    $"- Damage: {bestShipDmg?.GetName()} ({pvp["max_damage_dealt"]})\n" +
+                                    $"- XP: {Context.MainHandler.ShipHandler.GetShipById((string)pvp["max_xp_ship_id"])?.GetName()} ({pvp["max_xp"]})\n" +
+                                    $"- Kills: {Context.MainHandler.ShipHandler.GetShipById((string)pvp["max_frags_ship_id"])?.GetName()} ({pvp["max_frags_battle"]})\n" +
+                                    $"- Plane kills: {Context.MainHandler.ShipHandler.GetShipById((string)pvp["max_planes_killed_ship_id"])?.GetName()} ({pvp["max_planes_killed"]})\n" +
+                                    $"**Main battery**:\n" +
+                                    $"- Kills: {main["frags"]} (Max: {main["max_frags_battle"]} with {Context.MainHandler.ShipHandler.GetShipById((string)main["max_frags_ship_id"])?.GetName()})\n" +
+                                    $"- Shots: {main["shots"]} (Accuracy: {Utils.Percentage((float)main["hits"], (float)main["shots"])})\n" +
+                                    $"**Secondary battery**:\n" +
+                                    $"- Kills: {secondary["frags"]} (Max: {secondary["max_frags_battle"]} with {Context.MainHandler.ShipHandler.GetShipById((string)secondary["max_frags_ship_id"])?.GetName()})\n" +
+                                    $"- Shots: {secondary["shots"]} (Accuracy: {Utils.Percentage((float)secondary["hits"], (float)secondary["shots"])})\n" +
+                                    $"**Torpedoes**:\n" +
+                                    $"- Kills: {torps["frags"]} (Max: {torps["max_frags_battle"]} with {Context.MainHandler.ShipHandler.GetShipById((string)torps["max_frags_ship_id"])?.GetName()})\n" +
+                                    $"- Shots: {torps["shots"]} (Accuracy: {Utils.Percentage((float)torps["hits"], (float)torps["shots"])})\n" +
+                                    $"**Ramming**:\n" +
+                                    $"- Kills: {ram["frags"]} (Max: {ram["max_frags_battle"]} with {Context.MainHandler.ShipHandler.GetShipById((string)ram["max_frags_ship_id"])?.GetName()})\n" +
+                                    $"**Aircraft**:\n" +
+                                    $"- Kills: {aircraft["frags"]} (Max: {aircraft["max_frags_battle"]} with {Context.MainHandler.ShipHandler.GetShipById((string)aircraft["max_frags_ship_id"])?.GetName()})";
+                        }
+                        eb.AddField("Statistics", stats);
+                        eb.Footer = new EmbedFooterBuilder().WithText($"To know about a specific ship, type: {Context.MainHandler.GetCommandPrefix(Context.Channel)}stats {(String)result["nickname"]} [ship]");
+                        await ReplyAsync("", embed: eb);
+                    }
+                    else
+                    {
+                        //ship stats from user
+                        if (Context.MainHandler.ShipHandler.IsReady() == null)
+                        {
+                            await ReplyAsync("It wasn't possible to establish a connection to the ship database.");
+                            typing.Dispose();
+                            return;
+                        }
+                        if (!Context.MainHandler.ShipHandler.IsReady().GetValueOrDefault())
+                        {
+                            await ReplyAsync("Loading ship database.");
+                            typing.Dispose();
+                            return;
+                        }
+                        if (ship.Length < 2)
+                        {
+                            await ReplyAsync("Type at least 2 characters for the ship.");
+                            typing.Dispose();
+                            return;
+                        }
+                        List<IShip> r = Context.MainHandler.ShipHandler.SearchShips(ship);
+                        if (r.Count() == 0)
+                            await ReplyAsync("No ships found with or containing that name.");
+                        else if (r.Count() > 1)
+                        {
+                            string r_string = r[0].GetName();
+                            for (int i = 1; i < r.Count(); i++)
+                                r_string += ", " + r[i].GetName();
+                            await ReplyAsync("More than 1 result found: " + r_string);
+                        }
+                        else
+                        {
+                            JObject result;
+                            using (var httpClient = new HttpClient())
+                            {
+                                var jsonraw = await httpClient.GetStringAsync($"https://api.worldofwarships.com/wows/ships/stats/?application_id=ca60f30d0b1f91b195a521d4aa618eee&account_id={account_id}&ship_id={r[0].GetId()}");
+                                JObject json = JObject.Parse(jsonraw);
+                                if ((String)json["status"] != "ok")
+                                {
+                                    await ReplyAsync("Something went wrong with the WoWS API.");
+                                    typing.Dispose();
+                                    return;
+                                }
+                                JObject data = (JObject)json["data"];
+                                if (!data.HasValues)
+                                {
+                                    await ReplyAsync("Player data is hidden.");
+                                    typing.Dispose();
+                                    return;
+                                }
+                                try { result = (JObject)((JArray)data[$"{account_id}"])[0]; } catch { result = null; }
+                            }
+                            EmbedBuilder eb = new EmbedBuilder();
+                            eb.Title = $"Stats of {account_name}'s {r[0].GetName()}";
+                            eb.Color = Utils.GetRandomColor();
+                            if (result == null)
+                                eb.Description = $"{account_name} doesn't have stats for this ship.";
+                            else
+                            {
+                                eb.ThumbnailUrl = r[0].GetImageUrl();
+                                JObject pvp = (JObject)result["pvp"];
+                                JObject main = (JObject)pvp["main_battery"];
+                                JObject secondary = (JObject)pvp["second_battery"];
+                                JObject torps = (JObject)pvp["torpedoes"];
+                                JObject ram = (JObject)pvp["ramming"];
+                                JObject aircraft = (JObject)pvp["aircraft"];
+                                eb.Description = $"**Distance**: {result["distance"]} km\n" +
+                                                 $"**Battles**: {pvp["battles"]} ({pvp["wins"]}W/{pvp["losses"]}L/{pvp["draws"]}T - WR: {Utils.Percentage((float)pvp["wins"], (float)pvp["battles"])} - SR: {Utils.Percentage((float)pvp["survived_battles"], (float)pvp["battles"])})\n" +
+                                                 $"**Last battle**: {Utils.UnixTimestampToString((string)result["last_battle_time"])}\n" +
+                                                 $"**Planes killed**: {pvp["planes_killed"]}\n" +
+                                                 $"**Best scores**:\n" +
+                                                 $"- Damage: {pvp["max_damage_dealt"]}\n" +
+                                                 $"- XP: {pvp["max_xp"]}\n" +
+                                                 $"- Kills: {pvp["max_frags_battle"]}\n" +
+                                                 $"- Plane kills: {pvp["max_planes_killed"]}\n" +
+                                                 $"**Main battery**:\n" +
+                                                 $"- Kills: {main["frags"]} (Max: {main["max_frags_battle"]})\n" +
+                                                 $"- Shots: {main["shots"]} (Accuracy: {Utils.Percentage((float)main["hits"], (float)main["shots"])})\n" +
+                                                 $"**Secondary battery**:\n" +
+                                                 $"- Kills: {secondary["frags"]} (Max: {secondary["max_frags_battle"]})\n" +
+                                                 $"- Shots: {secondary["shots"]} (Accuracy: {Utils.Percentage((float)secondary["hits"], (float)secondary["shots"])})\n" +
+                                                 $"**Torpedoes**:\n" +
+                                                 $"- Kills: {torps["frags"]} (Max: {torps["max_frags_battle"]})\n" +
+                                                 $"- Shots: {torps["shots"]} (Accuracy: {Utils.Percentage((float)torps["hits"], (float)torps["shots"])})\n" +
+                                                 $"**Aircraft**:\n" +
+                                                 $"- Kills: {torps["frags"]} (Max: {torps["max_frags_battle"]})\n" +
+                                                 $"**Ramming**:\n" +
+                                                 $"- Kills: {aircraft["frags"]} (Max: {aircraft["max_frags_battle"]})";
+                            }
+                            await ReplyAsync("", embed: eb);
+                        }
+                    }
+                }
+            }
+            catch(Exception e) { Console.WriteLine(e); }
+        }
     }
 
     [Name("Music")]
@@ -938,7 +1190,7 @@ namespace Maya.Modules.Commands
             {
                 EmbedBuilder eb = new EmbedBuilder();
                 eb.Title = "**Now playing**";
-                eb.Color = Utils.getRandomColor();
+                eb.Color = Utils.GetRandomColor();
                 eb.ThumbnailUrl = $"http://img.youtube.com/vi/{current.Song.VideoId}/mqdefault.jpg";
                 eb.Description = $"[**{current.Song.Title}**](https://www.youtube.com/watch?v={current.Song.VideoId})";
                 eb.Description += $"\n**Duration**: ``[{current.Song.GetTimePlaying()}/{current.Song.Duration.GetValueOrDefault().ToString(@"mm\:ss")}]``";
@@ -953,7 +1205,7 @@ namespace Maya.Modules.Commands
         public async Task Queue()
         {
             EmbedBuilder eb = new EmbedBuilder();
-            eb.Color = Utils.getRandomColor();
+            eb.Color = Utils.GetRandomColor();
             MusicContext current = Context.MainHandler.GuildMusicHandler(Context.Guild).GetCurrentSong();
             if (current != null)
             {
@@ -988,7 +1240,7 @@ namespace Maya.Modules.Commands
 
         [Command("volume", RunMode = RunMode.Async)]
         [Summary("Change the volume from the bot")]
-        [RequireAdmin]
+        [RequireAdmin(AdminLevel.MODERATOR)]
         public async Task Volume(Nullable<int> volume = null)
         {
             if (volume == null)
@@ -1007,7 +1259,7 @@ namespace Maya.Modules.Commands
 
         [Command("skip", RunMode = RunMode.Async)]
         [Summary("Skip the current song")]
-        [RequireAdmin]
+        [RequireAdmin(AdminLevel.MODERATOR)]
         public async Task Skip()
         {
             await ReplyAsync("Skipping...");
@@ -1016,7 +1268,7 @@ namespace Maya.Modules.Commands
 
         [Command("stop", RunMode = RunMode.Async)]
         [Summary("Skip the current song and erase the song queue")]
-        [RequireAdmin]
+        [RequireAdmin(AdminLevel.MODERATOR)]
         public async Task Stop()
         {
             await ReplyAsync("Stopping...");
@@ -1130,7 +1382,7 @@ namespace Maya.Modules.Commands
             IGuildUser bot = await Context.Guild.GetCurrentUserAsync();
             eb.Author = new EmbedAuthorBuilder().WithName("Credits").WithIconUrl(Context.Client.CurrentUser.GetAvatarUrl());
             eb.ThumbnailUrl = application.Owner.GetAvatarUrl();
-            eb.Color = Maya.Utils.getRandomColor();
+            eb.Color = Maya.Utils.GetRandomColor();
             eb.Description = $"Created by: {application.Owner.Mention}\n" +
                              $"Suggestions? Tell him. 😄\n\n" +
                               "Source: https://github.com/SubZero0/Maya";

@@ -27,26 +27,28 @@ namespace Maya.Handlers
             return user.Id == (await MainHandler.Client.GetApplicationInfoAsync()).Owner.Id;
         }
 
-        public async Task<bool> IsAdminAsync(IUser user)
+        public Task<bool> IsAdminAsync(IUser user)
         {
-            return await Task.FromResult(false);
+            return Task.FromResult(false);
         }
 
-        public async Task<bool> IsModAsync(IUser user)
+        public Task<bool> IsModAsync(IUser user)
         {
-            return await Task.FromResult(false);
+            if (user is IGuildUser)
+                return Task.FromResult(((IGuildUser)user).GuildPermissions.Administrator);
+            return Task.FromResult(false);
         }
 
         public async Task<bool> IsAtLeastAsync(IUser user, AdminLevel level)
         {
             if (await IsOwnerAsync(user) && AdminLevel.OWNER >= level)
-                return await Task.FromResult(true);
+                return true;
             if (await IsAdminAsync(user) && AdminLevel.ADMIN >= level)
-                return await Task.FromResult(true);
+                return true;
             if (await IsModAsync(user) && AdminLevel.MODERATOR >= level)
-                return await Task.FromResult(true);
+                return true;
             if (AdminLevel.USER >= level)
-                return await Task.FromResult(true);
+                return true;
             return false;
         }
     }

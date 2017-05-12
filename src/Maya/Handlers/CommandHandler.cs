@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord.Commands;
@@ -18,15 +17,15 @@ namespace Maya
     {
         private CommandService commands;
         private DiscordSocketClient client;
-        private IDependencyMap map;
+        private IServiceProvider services;
         private MainHandler MainHandler;
 
-        public async Task InitializeAsync(MainHandler MainHandler, IDependencyMap _map)
+        public async Task InitializeAsync(MainHandler MainHandler, IServiceProvider services)
         {
             this.MainHandler = MainHandler;
-            client = _map.Get<DiscordSocketClient>();
+            client = (DiscordSocketClient)services.GetService(typeof(DiscordSocketClient));
             commands = new CommandService();
-            map = _map;
+            this.services = services;
 
             commands.AddTypeReader<Nullable<int>>(new NullableTypeReader<int>(int.TryParse));
             await commands.AddModulesAsync(Assembly.GetEntryAssembly());
@@ -56,7 +55,7 @@ namespace Maya
         public async Task HandleCommandAsync(SocketUserMessage msg, int argPos)
         {
             var context = new MayaCommandContext(client, MainHandler, msg);
-            var result = await commands.ExecuteAsync(context, argPos, map);
+            var result = await commands.ExecuteAsync(context, argPos, services);
             if (!result.IsSuccess && result.Error != CommandError.UnknownCommand)
                 if (result.ErrorReason != "null")
                     await msg.Channel.SendMessageAsync(result.ErrorReason);
@@ -75,20 +74,20 @@ namespace Maya
                         {
                             bool ok = true;
                             foreach (PreconditionAttribute precondition in mi.Preconditions.Where(x => !(x is Ignore)))
-                                if (!(await precondition.CheckPermissions(context, null, map)).IsSuccess)
+                                if (!(await precondition.CheckPermissions(context, null, services)).IsSuccess)
                                 {
                                     ok = false;
                                     break;
                                 }
                             if (ok)
                             {
-                                var cmds = mi.Commands.ToList<object>();
+                                var cmds = mi.Commands.GroupBy(x => x.Aliases[0]).Select(x => x.First()).ToList<object>();
                                 cmds.AddRange(mi.Submodules);
                                 for (int i = cmds.Count - 1; i >= 0; i--)
                                 {
                                     object o = cmds[i];
                                     foreach (PreconditionAttribute precondition in ((o as CommandInfo)?.Preconditions.Where(x => !(x is Ignore)) ?? (o as ModuleInfo)?.Preconditions.Where(x => !(x is Ignore))))
-                                        if (!(await precondition.CheckPermissions(context, o as CommandInfo, map)).IsSuccess)
+                                        if (!(await precondition.CheckPermissions(context, o as CommandInfo, services)).IsSuccess)
                                             cmds.Remove(o);
                                 }
                                 if (cmds.Count != 0)
@@ -123,7 +122,7 @@ namespace Maya
                             command = command.Substring(0, lastIndex);
                         }
                     }
-                    if (cmd != null && await CheckPreconditionsAsync(cmd.Value, context, map))
+                    if (cmd != null && await CheckPreconditionsAsync(cmd.Value, context, services))
                     {
                         eb.Author.Name = $"Help: {cmd.Value.Command.Aliases.First()}";
                         eb.Description = $"Usage: {MainHandler.GetCommandPrefix(context.Channel)}{cmd.Value.Command.Aliases.First()}";
@@ -161,10 +160,10 @@ namespace Maya
             return get?.Text;
         }
 
-        private async Task<bool> CheckPreconditionsAsync(CommandMatch cmd, ICommandContext context, IDependencyMap map)
+        private async Task<bool> CheckPreconditionsAsync(CommandMatch cmd, ICommandContext context, IServiceProvider service)
         {
             foreach (PreconditionAttribute p in cmd.Command.Preconditions.Where(x => !(x is Ignore)))
-                if (!(await p.CheckPermissions(context, cmd.Command, map)).IsSuccess)
+                if (!(await p.CheckPermissions(context, cmd.Command, service)).IsSuccess)
                     return false;
             return true;
         }

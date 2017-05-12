@@ -24,7 +24,7 @@ namespace Maya.Handlers
         {
             ready = false;
             ChatterBotFactory factory = new ChatterBotFactory();
-            bot = factory.Create(ChatterBotType.CLEVERBOT);
+            bot = factory.Create(ChatterBotType.PANDORABOTS, "...");
             session = bot.CreateSession();
             await session.Initialize();
             ready = true;

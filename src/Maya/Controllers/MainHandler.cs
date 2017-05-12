@@ -63,10 +63,10 @@ namespace Maya.Controllers
             return Task.CompletedTask;
         }
 
-        public async Task InitializeEarlyAsync(IDependencyMap map)
+        public async Task InitializeEarlyAsync(IServiceProvider services)
         {
             await ConfigHandler.InitializeAsync();
-            await CommandHandler.InitializeAsync(this, map);
+            await CommandHandler.InitializeAsync(this, services);
             await TextHandler.InitializeAsync(ConfigHandler.GetSwearString());
             await ShipHandler.InitializeAsync();
             await BotHandler.InitializeAsync();

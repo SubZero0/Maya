@@ -2,6 +2,7 @@
 using Discord.WebSocket;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 
 namespace Maya
@@ -103,10 +104,22 @@ namespace Maya
             return new string(array, 0, arrayIndex);
         }
 
-        public static Color getRandomColor()
+        public static Color GetRandomColor()
         {
             Random r = new Random();
             return new Color((byte)r.Next(255), (byte)r.Next(255), (byte)r.Next(255));
+        }
+
+        public static string UnixTimestampToString(string unixTimestamp)
+        {
+            return DateTimeOffset.FromUnixTimeSeconds(long.Parse(unixTimestamp)).ToString("R", new CultureInfo("en-US"));
+        }
+
+        public static string Percentage(double v1, double v2)
+        {
+            if (v2 == 0)
+                return "0%";
+            return $"{(int)Math.Ceiling(v1 / v2 * 100)}%";
         }
     }
 }

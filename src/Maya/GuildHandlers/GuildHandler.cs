@@ -61,10 +61,11 @@ namespace Maya.GuildHandlers
             await TagHandler.Close();
         }
 
-        public async Task RenewGuildObject(SocketGuild Guild)
+        public Task RenewGuildObject(SocketGuild Guild)
         {
             this.Guild = Guild;
-            await Guild.DownloadUsersAsync();
+            //await Guild.DownloadUsersAsync(); //TODO: Locking the thread
+            return Task.CompletedTask;
         }
          
         public void Check()

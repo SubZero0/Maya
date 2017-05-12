@@ -3,9 +3,9 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
 using Discord.Commands;
-using Discord.Audio;
 using System.IO;
 using Maya.Controllers;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Maya
 {
@@ -24,8 +24,8 @@ namespace Maya
 
             Discord = new DiscordSocketClient(new DiscordSocketConfig()
             {
-                LogLevel = LogSeverity.Error,
-                AlwaysDownloadUsers = true,
+                LogLevel = LogSeverity.Info,
+                MessageCacheSize = 100
             });
 
             Discord.Log += (message) =>
@@ -33,25 +33,23 @@ namespace Maya
                 Console.WriteLine($"{message.ToString()}");
                 return Task.CompletedTask;
             };
+            Discord.Ready += async () =>
+            {
+                Console.WriteLine("Connected!");
+                await Discord.SetGameAsync(null);
+                await MainHandler.InitializeLaterAsync();
+            };
 
-            var map = new DependencyMap();
-            map.Add(Discord);
+            var services = new ServiceCollection();
+            services.AddSingleton(Discord);
 
             MainHandler = new MainHandler(Discord);
             Discord.GuildAvailable += MainHandler.GuildAvailableEvent;
             Discord.LeftGuild += MainHandler.LeftGuildEvent;
-            await MainHandler.InitializeEarlyAsync(map);
+            await MainHandler.InitializeEarlyAsync(services.BuildServiceProvider());
 
             await Discord.LoginAsync(TokenType.Bot, MainHandler.ConfigHandler.GetBotToken());
             await Discord.StartAsync();
-
-            await Task.Delay(3000);
-            Console.WriteLine("Connected!");
-
-            await Discord.SetGameAsync(null);
-
-            await MainHandler.InitializeLaterAsync();
-
             await Task.Delay(-1);
         }
     }

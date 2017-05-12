@@ -12,7 +12,7 @@ namespace Maya.Attributes
 {
     public class MusicContextAttribute : PreconditionAttribute
     {
-        public async override Task<PreconditionResult> CheckPermissions(ICommandContext context, CommandInfo command, IDependencyMap map) //TODO: Remover connect aqui
+        public async override Task<PreconditionResult> CheckPermissions(ICommandContext context, CommandInfo command, IServiceProvider map) //TODO: Remover connect aqui
         {
             if (!(context.Channel is ITextChannel))
                 return PreconditionResult.FromError("null");
