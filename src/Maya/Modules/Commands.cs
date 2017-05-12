@@ -128,6 +128,7 @@ namespace Maya.Modules.Commands
 
         [Command("swearjar")]
         [Summary("Show how much money the swear jar currently has")]
+		[RequireContext(ContextType.Guild)]
         [RequireSwearjar]
         public async Task Swearjar()
         {
