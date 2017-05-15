@@ -10,7 +10,7 @@ using Discord;
 using Maya.Controllers;
 using Maya.Interfaces;
 
-namespace Maya
+namespace Maya.Handlers
 {
     public class TextHandler : IHandler
     {
@@ -57,19 +57,19 @@ namespace Maya
                 if (!MainHandler.GuildIgnoreHandler(channel.Guild).Contains(msg.Author.Id) && !msg.Author.IsBot)
                 {
                     var autoResponse = MainHandler.GuildConfigHandler(channel.Guild).GetAutoResponse();
-                    if (autoResponse.IsEnabled && Utils.IsChannelListed(channel, autoResponse.TextChannels))
+                    if (autoResponse.IsEnabled && channel.IsChannelListed(autoResponse.TextChannels))
                     {
                         var prefix = MainHandler.GetCommandPrefix(msg.Channel);
                         if (!(msg.Content.StartsWith(prefix) && msg.Content.Length > prefix.Length + 1 && char.IsLetter(msg.Content.ElementAt(prefix.Length + 1))))
                         {
                             bool interfere = true;
                             if (interferenceTime != null)
-                                if (((TimeSpan)(DateTime.Now - interferenceTime.GetValueOrDefault())).Minutes < MainHandler.GuildPersonalityHandler(channel.Guild).GetChatInterferenceDelay())
+                                if (((DateTime.Now - interferenceTime.GetValueOrDefault())).Minutes < MainHandler.GuildPersonalityHandler(channel.Guild).GetChatInterferenceDelay())
                                     interfere = false;
                             if (interfere)
                             {
                                 string ans = null;
-                                /*if (Answers.isReady()) //TODO: Get answers file!!
+                                /*if (Answers.isReady()) //TODO: Get answers file
                                     ans = Answers.getAnswer(e.Message.RawText);*/
                                 if (MainHandler.GuildPersonalityHandler(channel.Guild).IsReady())
                                 {
@@ -85,29 +85,10 @@ namespace Maya
                             }
                         }
                     }
-                    if (MainHandler.GuildPersonalityHandler(channel.Guild).IsReady())
-                        if (msg.Content.IndexOf($"{MainHandler.GetCommandPrefix(channel)}{MainHandler.GuildPersonalityHandler(channel.Guild).GetName()}", StringComparison.OrdinalIgnoreCase) != -1)
-                        {
-                            string[,] own = MainHandler.GuildPersonalityHandler(channel.Guild).GetOwnAnswers();
-                            string[,] temp = MainHandler.ConfigHandler.GetAnswers();
-                            string[,] sum = new string[own.GetLength(0) + temp.GetLength(0), 2];
-                            for (int i = 0; i < own.GetLength(0); i++)
-                            {
-                                sum[i, 0] = own[i, 0];
-                                sum[i, 1] = own[i, 1];
-                            }
-                            for (int i = 0; i < temp.GetLength(0); i++)
-                            {
-                                sum[own.GetLength(0) + i, 0] = temp[i, 0];
-                                sum[own.GetLength(0) + i, 1] = temp[i, 1];
-                            }
-                            await msg.Channel.SendMessageAsync(Utils.GetRandomWeightedChoice(sum));
-                            return;
-                        }
                     if (swear != null)
                     {
                         var sj = MainHandler.GuildConfigHandler(channel.Guild).GetSwearJar();
-                        if (sj.IsEnabled && Utils.IsChannelListed(msg.Channel, sj.TextChannels))
+                        if (sj.IsEnabled && msg.Channel.IsChannelListed(sj.TextChannels))
                         {
                             bool swearjar = true;
                             if (swearTimer != null)
@@ -123,7 +104,7 @@ namespace Maya
                         }
                     }
                     var chatterbot = MainHandler.GuildConfigHandler(channel.Guild).GetChatterBot();
-                    if (chatterbot.IsEnabled && Utils.IsChannelListed(msg.Channel, chatterbot.TextChannels))
+                    if (chatterbot.IsEnabled && msg.Channel.IsChannelListed(chatterbot.TextChannels))
                     {
                         int argPos = 0;
                         if (msg.HasMentionPrefix(MainHandler.Client.CurrentUser, ref argPos))
@@ -162,13 +143,13 @@ namespace Maya
                                 return;
                             }
                             string[] split = str.Split(new string[] { " | " }, StringSplitOptions.None);
-                            SocketGuild g = Utils.FindGuild(MainHandler.Client, split[0]);
+                            SocketGuild g = MainHandler.Client.FindGuild(split[0]);
                             if (g == null)
                             {
                                 await msg.Channel.SendMessageAsync("Guild not found");
                                 return;
                             }
-                            ITextChannel t = Utils.FindTextChannel(g, split[1]);
+                            ITextChannel t = g.FindTextChannel(split[1]);
                             if (t == null)
                             {
                                 await msg.Channel.SendMessageAsync("Text channel not found");

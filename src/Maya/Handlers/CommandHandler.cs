@@ -47,7 +47,7 @@ namespace Maya
             if (msg.Channel is ITextChannel && !MainHandler.GuildConfigHandler((msg.Channel as ITextChannel).Guild).IsChannelAllowed(msg.Channel)) return Task.CompletedTask;
             if (msg.Channel is ITextChannel && MainHandler.GuildIgnoreHandler((msg.Channel as ITextChannel).Guild).Contains(msg.Author.Id)) return Task.CompletedTask;
             int argPos = 0;
-            if (!(/*msg.HasMentionPrefix(client.CurrentUser, ref argPos) || */msg.HasStringPrefix(MainHandler.GetCommandPrefix(msg.Channel), ref argPos))) return Task.CompletedTask;
+            if (!((msg.Channel is ITextChannel && !MainHandler.GuildConfigHandler(((ITextChannel)msg.Channel).Guild).GetChatterBot().IsEnabled && msg.HasMentionPrefix(client.CurrentUser, ref argPos)) || msg.HasStringPrefix(MainHandler.GetCommandPrefix(msg.Channel), ref argPos))) return Task.CompletedTask;
             var _ = HandleCommandAsync(msg, argPos);
             return Task.CompletedTask;
         }
@@ -93,9 +93,7 @@ namespace Maya
                                 if (cmds.Count != 0)
                                 {
                                     var list = cmds.OrderBy(x => ((x as CommandInfo)?.Name ?? (x as ModuleInfo)?.Name)).Select(x => $"{MainHandler.GetCommandPrefix(context.Channel)}{((x as CommandInfo)?.Name ?? (x as ModuleInfo)?.Name)}");
-                                    eb.Description += $"**{mi.Name}:** " +
-                                                      $"{(mi.Name == "Player-specific" ? $"{MainHandler.GetCommandPrefix(context.Channel)}{(context.Channel is ITextChannel ? MainHandler.GuildPersonalityHandler(context.Guild).GetName().ToLower() : MainHandler.Client.CurrentUser.Username)}{(list.Count() != 0 ? ", " : "")}" : "")}" +
-                                                      $"{String.Join(", ", list)}\n";
+                                    eb.Description += $"**{mi.Name}:** {String.Join(", ", list)}\n";
                                 }
                             }
                         }
@@ -135,17 +133,6 @@ namespace Maya
                             eb.Description += $"\nRemarks: {cmd.Value.Command.Remarks}";
                         if (cmd.Value.Command.Aliases.Count != 1)
                             eb.Description += $"\nAliases: {String.Join(", ", cmd.Value.Command.Aliases.Where(x => x != cmd.Value.Command.Aliases.First()))}";
-                    }
-                    else
-                        eb.Description = $"Command '{command}' not found.";
-                }
-                else
-                {
-                    string name = (context.Channel is ITextChannel ? MainHandler.GuildPersonalityHandler(context.Guild).GetName().ToLower() : MainHandler.Client.CurrentUser.Username);
-                    if (command == name)
-                    {
-                        eb.Author.Name = $"Help: {name}";
-                        eb.Description = $"Usage: {MainHandler.GetCommandPrefix(context.Channel)}{name}";
                     }
                     else
                         eb.Description = $"Command '{command}' not found.";

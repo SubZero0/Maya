@@ -93,7 +93,7 @@ namespace Maya.Modules.Functions
                         var w = MainHandler.GuildConfigHandler(guild).GetForumUpdates();
                         if (w.IsEnabled)
                         {
-                            ITextChannel tc = Utils.FindTextChannel(guild, w.TextChannel);
+                            ITextChannel tc = guild.FindTextChannel(w.TextChannel);
                             if (tc != null)
                                 for (int i = list.Count - 1; i >= 0; i--)
                                     await MainHandler.ExceptionHandler.SendMessageAsyncEx("ForumUpdaterMessage", () => tc.SendMessageAsync("", false, list.ElementAt(i)));

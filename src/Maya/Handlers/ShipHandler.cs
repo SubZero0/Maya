@@ -15,13 +15,13 @@ namespace Maya.WoWS
         private Dictionary<string, IShip> ships;
         private Nullable<Boolean> ready;
         //ShipPlayer
-        public Dictionary<ulong, ShipPlayer> shipPlayers;
+        //public Dictionary<ulong, ShipPlayer> shipPlayers;
         public ShipHandler(MainHandler MainHandler)
         {
             this.MainHandler = MainHandler;
             ships = new Dictionary<string, IShip>();
             ready = false;
-            shipPlayers = new Dictionary<ulong, ShipPlayer>();
+            //shipPlayers = new Dictionary<ulong, ShipPlayer>();
         }
 
         public async Task InitializeAsync()

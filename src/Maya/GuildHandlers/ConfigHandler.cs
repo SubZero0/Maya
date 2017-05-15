@@ -46,7 +46,7 @@ namespace Maya.GuildHandlers
 
         public bool IsChannelAllowed(IChannel channel)
         {
-            return Utils.IsChannelListed(channel, config["AllowedChannels"].ToObject<List<string>>());
+            return channel.IsChannelListed(config["AllowedChannels"].ToObject<List<string>>());
         }
 
         public WrapperNF GetNotifications()

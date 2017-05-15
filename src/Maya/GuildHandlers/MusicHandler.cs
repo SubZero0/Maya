@@ -58,7 +58,7 @@ namespace Maya.GuildHandlers
             var wrapper = GuildHandler.ConfigHandler.GetMusic();
             if (!wrapper.IsEnabled)
                 return new MusicResult("null");
-            if(!Utils.IsChannelListed(context.Channel, wrapper.TextChannels))
+            if(!context.Channel.IsChannelListed(wrapper.TextChannels))
                 return new MusicResult("null");
             return new MusicResult();
         }

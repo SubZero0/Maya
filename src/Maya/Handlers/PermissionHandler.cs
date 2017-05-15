@@ -41,15 +41,19 @@ namespace Maya.Handlers
 
         public async Task<bool> IsAtLeastAsync(IUser user, AdminLevel level)
         {
-            if (await IsOwnerAsync(user) && AdminLevel.OWNER >= level)
-                return true;
-            if (await IsAdminAsync(user) && AdminLevel.ADMIN >= level)
-                return true;
-            if (await IsModAsync(user) && AdminLevel.MODERATOR >= level)
-                return true;
-            if (AdminLevel.USER >= level)
-                return true;
-            return false;
+            return await GetAdminLevelAsync(user) >= level;
+        }
+
+        public async Task<AdminLevel> GetAdminLevelAsync(IUser user)
+        {
+            if (await IsOwnerAsync(user))
+                return AdminLevel.OWNER;
+            else if (await IsAdminAsync(user))
+                return AdminLevel.ADMIN;
+            else if (await IsModAsync(user))
+                return AdminLevel.MODERATOR;
+            else
+                return AdminLevel.USER;
         }
     }
 }

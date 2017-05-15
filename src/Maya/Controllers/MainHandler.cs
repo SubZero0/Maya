@@ -3,10 +3,8 @@ using Maya.Modules.Functions;
 using Maya.WoWS;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Discord.WebSocket;
-using Discord.Commands;
 using Discord;
 using Maya.GuildHandlers;
 
@@ -24,6 +22,7 @@ namespace Maya.Controllers
         public ShipHandler ShipHandler { get; private set; }
         public BotHandler BotHandler { get; private set; }
         public ExceptionHandler ExceptionHandler { get; private set; }
+        public Handlers.DatabaseHandler DatabaseHandler { get; private set; }
 
         //Guild Handlers
         private Dictionary<ulong, GuildHandler> guilds;
@@ -42,9 +41,10 @@ namespace Maya.Controllers
             BotHandler = new BotHandler();
             forumUpdater = new ForumUpdater(this);
             ExceptionHandler = new ExceptionHandler(this);
+            DatabaseHandler = new Handlers.DatabaseHandler(this);
         }
 
-        internal async Task GuildAvailableEvent(SocketGuild guild)
+        internal async Task InitializeGuild(SocketGuild guild)
         {
             if (guilds.ContainsKey(guild.Id))
                 await guilds[guild.Id].RenewGuildObject(guild);
@@ -56,7 +56,7 @@ namespace Maya.Controllers
             }
         }
 
-        internal Task LeftGuildEvent(SocketGuild guild)
+        internal Task RemoveGuild(SocketGuild guild)
         {
             if (guilds.ContainsKey(guild.Id))
                 guilds[guild.Id].DeleteGuildFolder();
@@ -70,6 +70,7 @@ namespace Maya.Controllers
             await TextHandler.InitializeAsync(ConfigHandler.GetSwearString());
             await ShipHandler.InitializeAsync();
             await BotHandler.InitializeAsync();
+            await DatabaseHandler.InitializeAsync();
         }
 
         public async Task InitializeLaterAsync()
@@ -86,6 +87,7 @@ namespace Maya.Controllers
             await TextHandler.Close();
             await ShipHandler.Close();
             await BotHandler.Close();
+            await DatabaseHandler.Close();
         }
 
         public async Task ReloadGuildAsync(SocketGuild guild)
@@ -97,7 +99,7 @@ namespace Maya.Controllers
             guilds[guild.Id] = gh;
         }
 
-        public DatabaseHandler GuildDatabaseHandler(IGuild guild)
+        public GuildHandlers.DatabaseHandler GuildDatabaseHandler(IGuild guild)
         {
             if (guild == null)
                 return null;

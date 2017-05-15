@@ -2,10 +2,10 @@
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
-using Discord.Commands;
 using System.IO;
 using Maya.Controllers;
 using Microsoft.Extensions.DependencyInjection;
+using Discord.Addons.Paginator;
 
 namespace Maya
 {
@@ -42,10 +42,12 @@ namespace Maya
 
             var services = new ServiceCollection();
             services.AddSingleton(Discord);
+            services.AddPaginator(Discord);
 
             MainHandler = new MainHandler(Discord);
-            Discord.GuildAvailable += MainHandler.GuildAvailableEvent;
-            Discord.LeftGuild += MainHandler.LeftGuildEvent;
+            Discord.GuildAvailable += MainHandler.InitializeGuild;
+            Discord.JoinedGuild += MainHandler.InitializeGuild;
+            Discord.LeftGuild += MainHandler.RemoveGuild;
             await MainHandler.InitializeEarlyAsync(services.BuildServiceProvider());
 
             await Discord.LoginAsync(TokenType.Bot, MainHandler.ConfigHandler.GetBotToken());
